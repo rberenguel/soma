@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Soma</title>
+    <link
+      href="fonts/inter.css"
+      rel="stylesheet"
+    />
+    <link
+      href="fonts/monoid.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css"/>
+    <link rel="manifest" href="manifest.json">
+  </head>
+  <body>
+    <div id="container">
+      <div id="win-message">Congratulations!<br />You solved the cube!
+        <button id="export-btn">Export Solution</button>
+      </div>
+      <div id="rotation-controls">
+        <button id="rot-x" class="rot-btn">X</button>
+        <button id="rot-y" class="rot-btn">Y</button>
+        <button id="rot-z" class="rot-btn">Z</button>
+        <button id="restart-btn" class="rot-btn">R</button>
+      </div>
+      <div id="zoom-container">
+        <input
+          type="range"
+          id="zoom-slider"
+          min="5"
+          max="25"
+          value="15"
+          step="0.1"
+        />
+      </div>
+    </div>
+
+    <script src="libs/three.min.js"></script>
+
+    <script src="js/soma.js"></script>
+  </body>
+</html>
