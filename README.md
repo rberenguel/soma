@@ -6,12 +6,12 @@ This is an interactive, web-based 3D puzzle game of the classic Soma cube, built
 
 ## Features
 
-*   **Interactive 3D Interface:** A clean, minimalist 3D environment to manipulate the puzzle pieces.
-*   **Drag & Drop and smooth placing:** Move pieces intuitively by dragging them or by selecting and placing them.
-*   **Piece Rotation:** Rotate pieces on all three axes (X, Y, Z) using on-screen buttons or keyboard shortcuts.
-*   **Camera Controls:** Orbit the camera by dragging the background and zoom using the slider.
-*   **Win Detection:** The application automatically detects when the cube is solved successfully.
-*   **Solution Export:** Export your completed solution as a PNG image. The image includes a unique canonical signature for your solution, so you can find all 240 solutions.
+- **Interactive 3D Interface:** A clean, minimalist 3D environment to manipulate the puzzle pieces.
+- **Drag & Drop and smooth placing:** Move pieces intuitively by dragging them or by selecting and placing them.
+- **Piece Rotation:** Rotate pieces on all three axes (X, Y, Z) using on-screen buttons or keyboard shortcuts.
+- **Camera Controls:** Orbit the camera by dragging the background and zoom using the slider.
+- **Win Detection:** The application automatically detects when the cube is solved successfully.
+- **Solution Export:** Export your completed solution as a PNG image. The image includes a unique canonical signature for your solution, so you can find all 240 solutions.
 
 ## Canonical Solution Tagging
 
@@ -21,4 +21,4 @@ This signature is a standardized string representation of the solved cube, allow
 
 ## Libraries Used
 
-*   [Three.js](https://threejs.org/) for 3D rendering and interaction.
+- [Three.js](https://threejs.org/) for 3D rendering and interaction.

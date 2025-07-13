@@ -15,8 +15,9 @@ The algorithm is as follows:
 1.  **Grid Representation**: The 3x3x3 solved cube is represented as a 3D array. Each cell in the array stores an identifier for the specific Soma piece that occupies it. We assign a unique letter from 'A' to 'G' to each of the 7 pieces.
 
 2.  **Generate Symmetries**: For any given solution grid, we programmatically generate all 48 symmetric grids:
-    *   **24 Rotations**: We apply a series of rotations around the X, Y, and Z axes to produce all possible rotational views of the cube.
-    *   **24 Reflections**: We take a mirror image (reflection) of the original grid and then apply the same 24 rotations to it.
+
+    - **24 Rotations**: We apply a series of rotations around the X, Y, and Z axes to produce all possible rotational views of the cube.
+    - **24 Reflections**: We take a mirror image (reflection) of the original grid and then apply the same 24 rotations to it.
 
 3.  **Flatten to a String**: Each of the 48 generated 3D grids is "flattened" into a one-dimensional string of 27 characters. This is done by iterating through the grid in a fixed, predetermined order (e.g., Y, then X, then Z).
 
