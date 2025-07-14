@@ -5,6 +5,14 @@ const container = document.getElementById("container");
 let scene, camera, renderer;
 let raycaster, pointer;
 
+// New state for pinch-to-zoom
+let isPinching = false;
+let pinchStartDistance = 0;
+let pinchStartCameraLength = 0;
+const activePointers = [];
+const MIN_ZOOM = 4;
+const MAX_ZOOM = 25;
+
 const pieces = [];
 const gridUnit = 1;
 let selectedPiece = null;
@@ -18,7 +26,6 @@ let isDragging = false;
 let solutionGrid;
 let alignmentLine;
 
-// Corrected piece definitions for the 7 Soma pieces
 const pieceDefs = [
   {
     color: 0x268bd2,
@@ -93,7 +100,7 @@ const pieceDefs = [
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x01171c); // Use darker background
+  scene.background = new THREE.Color(0x01171c);
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -221,9 +228,8 @@ function selectPiece(piece) {
   if (selectedPiece) deselectPiece();
 
   selectedPiece = piece;
-  lastSelectedPiece = piece; // Remember this piece as the last one touched
+  lastSelectedPiece = piece;
 
-  // Create a ghost copy for placement
   ghostPiece = selectedPiece.clone(true);
   ghostPiece.userData.isPiece = false;
   ghostPiece.children.forEach((g) => {
@@ -240,13 +246,10 @@ function selectPiece(piece) {
 function deselectPiece() {
   if (!selectedPiece) return;
 
-  // Show the original piece again
   selectedPiece.visible = true;
 
-  // Remove the ghost
   if (ghostPiece) {
     scene.remove(ghostPiece);
-    // Proper disposal is good practice but omitted here for brevity
     ghostPiece = null;
   }
 
@@ -254,13 +257,38 @@ function deselectPiece() {
   updateGridAndCheckWin();
 }
 
-function addEventListeners() {
-  document.getElementById("zoom-slider").addEventListener("input", (e) => {
-    camera.position.setLength(e.target.value);
-  });
+function getPointersDistance(pointers) {
+  const p1 = pointers[0];
+  const p2 = pointers[1];
+  const dx = p1.clientX - p2.clientX;
+  const dy = p1.clientY - p2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
+function addPointer(event) {
+  activePointers.push(event);
+}
+
+function removePointer(event) {
+  const index = activePointers.findIndex(
+    (p) => p.pointerId === event.pointerId,
+  );
+  if (index > -1) {
+    activePointers.splice(index, 1);
+  }
+}
+
+function updatePointerCache(event) {
+  const index = activePointers.findIndex(
+    (p) => p.pointerId === event.pointerId,
+  );
+  if (index > -1) {
+    activePointers[index] = event;
+  }
+}
+
+function addEventListeners() {
   const rotatePiece = (axis) => {
-    // Rotate the ghost if we're placing, otherwise rotate the last piece we touched.
     const target = ghostPiece || lastSelectedPiece;
     if (!target) return;
 
@@ -268,14 +296,12 @@ function addEventListeners() {
     quaternion.setFromAxisAngle(axis, Math.PI / 2);
     target.quaternion.premultiply(quaternion);
 
-    // Snap to nearest 90-degree angle to prevent floating point drift
     const euler = new THREE.Euler().setFromQuaternion(target.quaternion, "YXZ");
     euler.x = Math.round(euler.x / (Math.PI / 2)) * (Math.PI / 2);
     euler.y = Math.round(euler.y / (Math.PI / 2)) * (Math.PI / 2);
     euler.z = Math.round(euler.z / (Math.PI / 2)) * (Math.PI / 2);
     target.quaternion.setFromEuler(euler);
 
-    // If we are rotating a piece that is already placed (no ghost), we must update the grid.
     if (!ghostPiece) {
       updateGridAndCheckWin();
     }
@@ -305,38 +331,32 @@ function addEventListeners() {
   });
 
   document.addEventListener("keyup", (e) => {
-    if (e.key.toLowerCase() === "a") {
-      e.stopPropagation();
-      rotatePiece(new THREE.Vector3(1, 0, 0));
-    }
-    if (e.key.toLowerCase() === "r") {
-      e.stopPropagation();
-      rotatePiece(new THREE.Vector3(0, 1, 0));
-    }
-    if (e.key.toLowerCase() === "s") {
-      e.stopPropagation();
-      rotatePiece(new THREE.Vector3(0, 0, 1));
-    }
-    // MODIFIED: Added keyboard shortcut '1' to trigger export
-    if (e.key === "1") {
-      e.stopPropagation();
-      exportSolution();
-    }
+    if (e.key.toLowerCase() === "a") rotatePiece(new THREE.Vector3(1, 0, 0));
+    if (e.key.toLowerCase() === "r") rotatePiece(new THREE.Vector3(0, 1, 0));
+    if (e.key.toLowerCase() === "s") rotatePiece(new THREE.Vector3(0, 0, 1));
+    if (e.key === "1") exportSolution();
   });
 
   container.addEventListener("pointerdown", (event) => {
     if (event.target !== renderer.domElement) return;
+    addPointer(event);
+
+    if (activePointers.length === 2) {
+      isPinching = true;
+      isDragging = false;
+      pinchStartDistance = getPointersDistance(activePointers);
+      pinchStartCameraLength = camera.position.length();
+      if (selectedPiece) deselectPiece();
+      return;
+    }
 
     isDragging = false;
     pointerStartPos = getPointerCoords(event);
     updatePointer(event);
-
     const intersected = getIntersectedObject();
 
     if (intersected) {
-      if (selectedPiece !== intersected) {
-        selectPiece(intersected);
-      }
+      if (selectedPiece !== intersected) selectPiece(intersected);
     } else if (selectedPiece) {
       selectedPiece.position.copy(ghostPiece.position);
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
@@ -346,47 +366,54 @@ function addEventListeners() {
 
   container.addEventListener("pointermove", (event) => {
     if (event.target !== renderer.domElement) return;
-    if (event.pointerType === "mouse" && event.buttons !== 1) return;
-    if (event.touches && event.touches.length > 1) return;
+    event.preventDefault();
+    updatePointerCache(event);
+
+    if (isPinching && activePointers.length === 2) {
+      const currentDist = getPointersDistance(activePointers);
+      if (currentDist === 0 || pinchStartDistance === 0) return;
+      const scale = currentDist / pinchStartDistance;
+      const newLength = pinchStartCameraLength / scale;
+      camera.position.setLength(
+        Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newLength)),
+      );
+      return;
+    }
 
     const currentPos = getPointerCoords(event);
     const deltaX = currentPos.x - pointerStartPos.x;
     const deltaY = currentPos.y - pointerStartPos.y;
 
-    if (!isDragging && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+    if (
+      !isDragging &&
+      !selectedPiece &&
+      (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)
+    ) {
       isDragging = true;
     }
 
     if (selectedPiece && ghostPiece) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
-
-      // Try to intersect with other pieces first
       const allIntersects = raycaster.intersectObjects(pieces, true);
       const intersectsWithPieces = allIntersects.filter(
         (i) => i.object instanceof THREE.Mesh && i.face,
       );
-
       if (intersectsWithPieces.length > 0) {
         const intersect = intersectsWithPieces[0];
         const point = intersect.point;
         const normal = intersect.face.normal.clone();
-
         const normalMatrix = new THREE.Matrix3().getNormalMatrix(
           intersect.object.matrixWorld,
         );
         const worldNormal = normal.applyMatrix3(normalMatrix).normalize();
-
-        // Move the new position slightly along the normal
         const newPos = point.clone().add(worldNormal.multiplyScalar(0.5));
-
         ghostPiece.position.set(
           Math.round(newPos.x),
           Math.round(newPos.y),
           Math.round(newPos.z),
         );
       } else {
-        // Fallback to ground plane
         const intersectsWithPlane = raycaster.intersectObject(placementPlane);
         if (intersectsWithPlane.length > 0) {
           const point = intersectsWithPlane[0].point;
@@ -399,33 +426,53 @@ function addEventListeners() {
       }
     } else if (isDragging) {
       const camRotSensitivity = 0.004;
-      const up = new THREE.Vector3(0, 1, 0);
+      const worldUp = new THREE.Vector3(0, 1, 0);
+
+      camera.position.applyAxisAngle(worldUp, -deltaX * camRotSensitivity);
+
       const right = new THREE.Vector3()
         .crossVectors(
           camera.up,
           camera.getWorldDirection(new THREE.Vector3()).negate(),
         )
         .normalize();
-      camera.position.applyAxisAngle(up, -deltaX * camRotSensitivity);
-      camera.position.applyAxisAngle(right, -deltaY * camRotSensitivity);
+
+      const currentAngle = camera.position.angleTo(worldUp);
+      let verticalDelta = -deltaY * camRotSensitivity;
+
+      const minPolarAngle = 0.1;
+      const maxPolarAngle = Math.PI - 0.1;
+
+      if (currentAngle + verticalDelta < minPolarAngle) {
+        verticalDelta = minPolarAngle - currentAngle;
+      } else if (currentAngle + verticalDelta > maxPolarAngle) {
+        verticalDelta = maxPolarAngle - currentAngle;
+      }
+
+      camera.position.applyAxisAngle(right, verticalDelta);
+
       camera.lookAt(scene.position);
       pointerStartPos = currentPos;
     }
   });
 
-  container.addEventListener("pointerup", (event) => {
-    if (event.target !== renderer.domElement) return;
-
+  const onPointerUpOrCancel = (event) => {
+    removePointer(event);
+    if (activePointers.length < 2) {
+      isPinching = false;
+    }
     if (selectedPiece && ghostPiece) {
       if (isDragging) {
         selectedPiece.position.copy(ghostPiece.position);
       }
-      // IMPORTANT: Copy the final rotation from the ghost to the real piece
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
       deselectPiece();
     }
     isDragging = false;
-  });
+  };
+
+  container.addEventListener("pointerup", onPointerUpOrCancel);
+  container.addEventListener("pointercancel", onPointerUpOrCancel);
 }
 
 function updateGridAndCheckWin() {
@@ -482,7 +529,6 @@ function animate() {
 }
 
 function restartGame() {
-  // Reset pieces to their initial positions and rotations
   pieces.forEach((piece, i) => {
     const angle = (i / pieceDefs.length) * Math.PI * 2;
     const radius = 5;
@@ -491,16 +537,14 @@ function restartGame() {
       1,
       Math.round(Math.sin(angle) * radius),
     );
-    piece.quaternion.set(0, 0, 0, 1); // Reset rotation
+    piece.quaternion.set(0, 0, 0, 1);
   });
 
-  // Hide win message and update grid
   document.getElementById("win-message").style.display = "none";
   document.getElementById("restart-btn").style.display = "none";
   updateGridAndCheckWin();
 }
 
-// Helper function to create a new 3x3x3 grid
 function createNewGrid() {
   return Array(3)
     .fill(0)
@@ -511,7 +555,6 @@ function createNewGrid() {
     );
 }
 
-// Helper to rotate a grid 90 degrees around an axis
 function rotateGrid(grid, axis) {
   const newGrid = createNewGrid();
   const N = 3;
@@ -520,17 +563,14 @@ function rotateGrid(grid, axis) {
       for (let z = 0; z < N; z++) {
         let nx, ny, nz;
         if (axis === "x") {
-          // 90 deg clockwise around x
           nx = x;
           ny = z;
           nz = N - 1 - y;
         } else if (axis === "y") {
-          // 90 deg clockwise around y
           nx = N - 1 - z;
           ny = y;
           nz = x;
         } else {
-          // 90 deg clockwise around z
           nx = y;
           ny = N - 1 - x;
           nz = z;
@@ -542,7 +582,6 @@ function rotateGrid(grid, axis) {
   return newGrid;
 }
 
-// Helper to reflect a grid across the YZ plane
 function reflectGrid(grid) {
   const newGrid = createNewGrid();
   const N = 3;
@@ -556,15 +595,12 @@ function reflectGrid(grid) {
   return newGrid;
 }
 
-// Helper to flatten a grid to a string using piece indices as IDs
 function flattenGrid(grid) {
   let s = "";
   const pieceIdMap = new Map();
-  // Use letters 'A' through 'G' for the signature
   pieces.forEach((p, i) =>
     pieceIdMap.set(p, String.fromCharCode("A".charCodeAt(0) + i)),
   );
-
   for (let y = 0; y < 3; y++) {
     for (let x = 0; x < 3; x++) {
       for (let z = 0; z < 3; z++) {
@@ -578,41 +614,31 @@ function flattenGrid(grid) {
 
 function getCanonicalSignature(grid) {
   const signatures = new Set();
-
   function addAllRotations(g) {
-    // Try all 24 rotational orientations
     let current = g;
     for (let i = 0; i < 4; i++) {
-      // Rotations around Y axis
       let currentY = current;
       for (let j = 0; j < 4; j++) {
-        // Rotations around X axis
         signatures.add(flattenGrid(currentY));
         currentY = rotateGrid(currentY, "x");
       }
       current = rotateGrid(current, "y");
     }
-
-    current = rotateGrid(g, "z"); // Tip onto a different face
+    current = rotateGrid(g, "z");
     for (let i = 0; i < 4; i++) {
       signatures.add(flattenGrid(current));
       current = rotateGrid(current, "y");
     }
-
     current = rotateGrid(g, "z");
     current = rotateGrid(current, "z");
-    current = rotateGrid(current, "z"); // Tip onto the opposite face
+    current = rotateGrid(current, "z");
     for (let i = 0; i < 4; i++) {
       signatures.add(flattenGrid(current));
       current = rotateGrid(current, "y");
     }
   }
-
-  // Add signatures for the original grid and its mirror image
   addAllRotations(grid);
   addAllRotations(reflectGrid(grid));
-
-  // Return the lexicographically smallest signature
   return Array.from(signatures).sort()[0];
 }
 
@@ -620,22 +646,18 @@ async function exportSolution() {
   const gridSize = 3;
   const cellSize = 50;
   const padding = 10;
-
   const signature = getCanonicalSignature(solutionGrid);
-
   try {
     await document.fonts.load("16px monoidregular");
   } catch (e) {
     console.error("Font could not be loaded:", e);
   }
-
   const canvas = document.createElement("canvas");
   canvas.width = gridSize * cellSize * 4 + padding * 5;
   canvas.height = gridSize * cellSize * 3 + padding * 4;
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#01171c";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   const faceLayout = {
     top: { x: 1, y: 0 },
     left: { x: 0, y: 1 },
@@ -644,7 +666,6 @@ async function exportSolution() {
     back: { x: 3, y: 1 },
     bottom: { x: 1, y: 2 },
   };
-
   const faces = {
     top: [],
     front: [],
@@ -661,7 +682,6 @@ async function exportSolution() {
     faces.right.push(new Array(gridSize).fill(null));
     faces.back.push(new Array(gridSize).fill(null));
   }
-
   for (let x = 0; x < gridSize; x++) {
     for (let y = 0; y < gridSize; y++) {
       for (let z = 0; z < gridSize; z++) {
@@ -678,14 +698,11 @@ async function exportSolution() {
       }
     }
   }
-
-  // Draw the faces onto the canvas first
   for (const faceName in faces) {
     const faceGrid = faces[faceName];
     const layout = faceLayout[faceName];
     const startX = layout.x * (gridSize * cellSize + padding) + padding;
     const startY = layout.y * (gridSize * cellSize + padding) + padding;
-
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         ctx.fillStyle = faceGrid[r][c] || "#ffffff";
@@ -706,10 +723,8 @@ async function exportSolution() {
       }
     }
   }
-
   const textGridSlotX = 0;
   const textGridSlotY = 0;
-
   const textX =
     textGridSlotX * (gridSize * cellSize + padding) +
     padding +
@@ -719,14 +734,11 @@ async function exportSolution() {
     textGridSlotY * (gridSize * cellSize + padding) +
     padding +
     (gridSize * cellSize) / 2;
-
   ctx.fillStyle = "#93a1a1";
   ctx.font = "16px monoidregular";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(signature, textX, textY);
-
-  // Trigger download
   const link = document.createElement("a");
   link.download = `soma-solution-${signature}.png`;
   link.href = canvas.toDataURL("image/png");
