@@ -305,7 +305,6 @@ function addEventListeners() {
   });
 
   document.addEventListener("keyup", (e) => {
-    console.log(e.key);
     if (e.key.toLowerCase() === "a") {
       e.stopPropagation();
       rotatePiece(new THREE.Vector3(1, 0, 0));
@@ -317,6 +316,11 @@ function addEventListeners() {
     if (e.key.toLowerCase() === "s") {
       e.stopPropagation();
       rotatePiece(new THREE.Vector3(0, 0, 1));
+    }
+    // MODIFIED: Added keyboard shortcut '1' to trigger export
+    if (e.key === "1") {
+      e.stopPropagation();
+      exportSolution();
     }
   });
 
@@ -614,35 +618,26 @@ function getCanonicalSignature(grid) {
 
 async function exportSolution() {
   const gridSize = 3;
-  const cellSize = 50; // Size of each cell in the exported image
+  const cellSize = 50;
   const padding = 10;
 
   const signature = getCanonicalSignature(solutionGrid);
 
-  // Ensure the font is loaded before using it on the canvas
   try {
     await document.fonts.load("16px monoidregular");
   } catch (e) {
     console.error("Font could not be loaded:", e);
   }
 
-  // Canvas dimensions for a standard cube net layout (4 cells wide, 3 cells high)
   const canvas = document.createElement("canvas");
   canvas.width = gridSize * cellSize * 4 + padding * 5;
   canvas.height = gridSize * cellSize * 3 + padding * 4;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#01171c"; // Background color
+  ctx.fillStyle = "#01171c";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw the signature
-  ctx.fillStyle = "#93a1a1";
-  ctx.font = "16px monoidregular";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText(signature, padding, padding);
-
   const faceLayout = {
-    top: { x: 1, y: 0 }, // Position in the 4x3 grid of faces
+    top: { x: 1, y: 0 },
     left: { x: 0, y: 1 },
     front: { x: 1, y: 1 },
     right: { x: 2, y: 1 },
@@ -667,7 +662,6 @@ async function exportSolution() {
     faces.back.push(new Array(gridSize).fill(null));
   }
 
-  // Populate face data from the solution grid
   for (let x = 0; x < gridSize; x++) {
     for (let y = 0; y < gridSize; y++) {
       for (let z = 0; z < gridSize; z++) {
@@ -675,7 +669,6 @@ async function exportSolution() {
         if (!piece) continue;
         const color =
           "#" + piece.children[0].children[0].material.color.getHexString();
-
         if (y === gridSize - 1) faces.top[2 - z][x] = color;
         if (y === 0) faces.bottom[z][x] = color;
         if (z === gridSize - 1) faces.front[2 - y][x] = color;
@@ -686,16 +679,12 @@ async function exportSolution() {
     }
   }
 
-  // Draw the faces onto the canvas
+  // Draw the faces onto the canvas first
   for (const faceName in faces) {
     const faceGrid = faces[faceName];
     const layout = faceLayout[faceName];
-    // Offset the face grid to not overlap with the signature
     const startX = layout.x * (gridSize * cellSize + padding) + padding;
-    const startY =
-      layout.y * (gridSize * cellSize + padding) +
-      padding +
-      (layout.y === 0 ? 30 : 0);
+    const startY = layout.y * (gridSize * cellSize + padding) + padding;
 
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
@@ -717,6 +706,25 @@ async function exportSolution() {
       }
     }
   }
+
+  const textGridSlotX = 0;
+  const textGridSlotY = 0;
+
+  const textX =
+    textGridSlotX * (gridSize * cellSize + padding) +
+    padding +
+    gridSize * cellSize * 3 +
+    cellSize / 2;
+  const textY =
+    textGridSlotY * (gridSize * cellSize + padding) +
+    padding +
+    (gridSize * cellSize) / 2;
+
+  ctx.fillStyle = "#93a1a1";
+  ctx.font = "16px monoidregular";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(signature, textX, textY);
 
   // Trigger download
   const link = document.createElement("a");
