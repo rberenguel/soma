@@ -22,6 +22,7 @@ const highlightEmissive = new THREE.Color(0xb58900); // Solarized Yellow
 let pointerStartPos = { x: 0, y: 0 };
 let pieceStartPos = new THREE.Vector3();
 let isDragging = false;
+let isRotatingCamera = false;
 
 let solutionGrid;
 let alignmentLine;
@@ -336,12 +337,18 @@ function addEventListeners() {
     if (e.key.toLowerCase() === "s") rotatePiece(new THREE.Vector3(0, 0, 1));
     if (e.key === "1") exportSolution();
   });
-
+  container.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const zoomSpeed = 0.001;
+    const newLength = camera.position.length() * (1 + event.deltaY * zoomSpeed);
+    camera.position.setLength(
+      Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newLength)),
+    );
+  });
   container.addEventListener("pointerdown", (event) => {
     if (event.target !== renderer.domElement) return;
     addPointer(event);
-
-    if (activePointers.length === 2) {
+    if (event.pointerType === "touch" && activePointers.length === 2) {
       isPinching = true;
       isDragging = false;
       pinchStartDistance = getPointersDistance(activePointers);
@@ -349,26 +356,25 @@ function addEventListeners() {
       if (selectedPiece) deselectPiece();
       return;
     }
-
     isDragging = false;
+    isRotatingCamera = false;
     pointerStartPos = getPointerCoords(event);
     updatePointer(event);
     const intersected = getIntersectedObject();
-
     if (intersected) {
       if (selectedPiece !== intersected) selectPiece(intersected);
     } else if (selectedPiece) {
       selectedPiece.position.copy(ghostPiece.position);
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
       deselectPiece();
+    } else if (event.pointerType === "mouse") {
+      isRotatingCamera = true;
     }
   });
-
   container.addEventListener("pointermove", (event) => {
     if (event.target !== renderer.domElement) return;
     event.preventDefault();
     updatePointerCache(event);
-
     if (isPinching && activePointers.length === 2) {
       const currentDist = getPointersDistance(activePointers);
       if (currentDist === 0 || pinchStartDistance === 0) return;
@@ -379,19 +385,18 @@ function addEventListeners() {
       );
       return;
     }
-
     const currentPos = getPointerCoords(event);
     const deltaX = currentPos.x - pointerStartPos.x;
     const deltaY = currentPos.y - pointerStartPos.y;
-
     if (
       !isDragging &&
       !selectedPiece &&
       (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)
     ) {
-      isDragging = true;
+      if (isRotatingCamera) {
+        isDragging = true;
+      }
     }
-
     if (selectedPiece && ghostPiece) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
@@ -424,51 +429,44 @@ function addEventListeners() {
           );
         }
       }
-    } else if (isDragging) {
+    } else if (isDragging && isRotatingCamera) {
       const camRotSensitivity = 0.004;
       const worldUp = new THREE.Vector3(0, 1, 0);
-
       camera.position.applyAxisAngle(worldUp, -deltaX * camRotSensitivity);
-
       const right = new THREE.Vector3()
         .crossVectors(
           camera.up,
           camera.getWorldDirection(new THREE.Vector3()).negate(),
         )
         .normalize();
-
       const currentAngle = camera.position.angleTo(worldUp);
       let verticalDelta = -deltaY * camRotSensitivity;
-
       const minPolarAngle = 0.1;
       const maxPolarAngle = Math.PI - 0.1;
-
       if (currentAngle + verticalDelta < minPolarAngle) {
         verticalDelta = minPolarAngle - currentAngle;
       } else if (currentAngle + verticalDelta > maxPolarAngle) {
         verticalDelta = maxPolarAngle - currentAngle;
       }
-
       camera.position.applyAxisAngle(right, verticalDelta);
-
       camera.lookAt(scene.position);
       pointerStartPos = currentPos;
     }
   });
-
   const onPointerUpOrCancel = (event) => {
     removePointer(event);
     if (activePointers.length < 2) {
       isPinching = false;
     }
     if (selectedPiece && ghostPiece) {
-      if (isDragging) {
+      if (isDragging || event.pointerType === "touch") {
         selectedPiece.position.copy(ghostPiece.position);
       }
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
       deselectPiece();
     }
     isDragging = false;
+    isRotatingCamera = false;
   };
 
   container.addEventListener("pointerup", onPointerUpOrCancel);
