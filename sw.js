@@ -1,4 +1,4 @@
-const CACHE_NAME = "soma-cache-v0.1.0";
+const CACHE_NAME = "soma-cache-v0.2.0";
 const urlsToCache = [
   "./",
   "./index.html",
