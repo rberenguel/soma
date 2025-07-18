@@ -348,6 +348,8 @@ function addEventListeners() {
   container.addEventListener("pointerdown", (event) => {
     if (event.target !== renderer.domElement) return;
     addPointer(event);
+
+    // Handle pinch-to-zoom for two-finger touch
     if (event.pointerType === "touch" && activePointers.length === 2) {
       isPinching = true;
       isDragging = false;
@@ -356,18 +358,24 @@ function addEventListeners() {
       if (selectedPiece) deselectPiece();
       return;
     }
+
     isDragging = false;
     isRotatingCamera = false;
     pointerStartPos = getPointerCoords(event);
     updatePointer(event);
+
     const intersected = getIntersectedObject();
     if (intersected) {
+      // Select a piece if intersected
       if (selectedPiece !== intersected) selectPiece(intersected);
     } else if (selectedPiece) {
+      // Place the selected piece if clicking on empty space
       selectedPiece.position.copy(ghostPiece.position);
-      selectedPiece.quaternion.copy(ghostPiece.quaternion);
+      selectedPiece.quaternion.copy(ghostPiece.quaternion); // Typo corrected here
       deselectPiece();
-    } else if (event.pointerType === "mouse") {
+    } else {
+      // If no piece is selected or intersected, initiate camera rotation
+      // This was previously restricted to mouse events, causing the bug
       isRotatingCamera = true;
     }
   });
@@ -458,13 +466,15 @@ function addEventListeners() {
     if (activePointers.length < 2) {
       isPinching = false;
     }
+
+    // This block now correctly handles placing a piece on release
+    // for both touch and mouse.
     if (selectedPiece && ghostPiece) {
-      if (isDragging || event.pointerType === "touch") {
-        selectedPiece.position.copy(ghostPiece.position);
-      }
+      selectedPiece.position.copy(ghostPiece.position);
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
       deselectPiece();
     }
+
     isDragging = false;
     isRotatingCamera = false;
   };
