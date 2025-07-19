@@ -184,7 +184,7 @@ function init() {
     console.error("Could not use localStorage. Re-computing solutions.", e);
     allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
   }
-
+  window.soma_allCanonicalSolutions = allCanonicalSolutions
   updateGridAndCheckWin();
   addEventListeners();
   animate();
