@@ -90,7 +90,6 @@ canvas {
   color: #fdf6e3;
 }
 #rotation-controls {
-  display: none;
   position: absolute;
   bottom: 20px;
   left: 20px;
@@ -99,6 +98,7 @@ canvas {
   z-index: 10;
 }
 .rot-btn {
+  display: none;
   width: 44px;
   height: 44px;
   background-color: #073642;
@@ -113,6 +113,7 @@ canvas {
   align-items: center;
 }
 .rot-btn:active {
+  display: none;
   background-color: #586e75;
 }
 #trackball {

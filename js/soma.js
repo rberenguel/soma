@@ -1,4 +1,4 @@
-import { initializeSolver } from './solver.js';
+import { initializeSolver } from "./solver.js";
 
 let allCanonicalSolutions = [];
 let ghostPiece = null;
@@ -17,6 +17,7 @@ const MIN_ZOOM = 4;
 const MAX_ZOOM = 25;
 
 const pieces = [];
+let chiralSwapMap; // Add this line
 const gridUnit = 1;
 let selectedPiece = null;
 const baseEmissive = new THREE.Color(0x000000);
@@ -149,17 +150,40 @@ function init() {
   scene.add(placementPlane);
 
   createSomaPieces();
-
-const solverHelpers = {
+  chiralSwapMap = new Map([
+    [pieces[5], pieces[6]],
+    [pieces[6], pieces[5]],
+  ]); // Add this line
+  const solverHelpers = {
     createNewGrid,
     rotateGrid,
     reflectGrid,
     flattenGrid,
-    getCanonicalSignature
+    getCanonicalSignature,
   };
-  
-  // Start the solver and store the result
-  allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
+
+  const solutionsCacheKey = "somaSolutions_v1";
+  try {
+    const cachedSolutions = localStorage.getItem(solutionsCacheKey);
+    if (cachedSolutions) {
+      console.log("Loading solutions from localStorage cache.");
+      allCanonicalSolutions = JSON.parse(cachedSolutions);
+    } else {
+      console.log("No cache found. Computing solutions...");
+      allCanonicalSolutions = initializeSolver(
+        pieceDefs,
+        pieces,
+        solverHelpers,
+      );
+      localStorage.setItem(
+        solutionsCacheKey,
+        JSON.stringify(allCanonicalSolutions),
+      );
+    }
+  } catch (e) {
+    console.error("Could not use localStorage. Re-computing solutions.", e);
+    allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
+  }
 
   updateGridAndCheckWin();
   addEventListeners();
@@ -637,33 +661,64 @@ function flattenGrid(grid) {
   return s;
 }
 
+// In soma.js, replace the existing getCanonicalSignature function
+
+// In soma.js, replace the entire getCanonicalSignature function
+
+// In soma.js, replace the entire getCanonicalSignature function
+
 function getCanonicalSignature(grid) {
   const signatures = new Set();
-  function addAllRotations(g) {
-    let current = g;
-    for (let i = 0; i < 4; i++) {
-      let currentY = current;
-      for (let j = 0; j < 4; j++) {
-        signatures.add(flattenGrid(currentY));
-        currentY = rotateGrid(currentY, "x");
+
+  // This helper correctly reflects the grid AND swaps the chiral pieces
+  function reflectAndSwapGrid(g) {
+    const newGrid = createNewGrid();
+    const N = 3;
+    // 1. Geometric reflection
+    for (let x = 0; x < N; x++) {
+      for (let y = 0; y < N; y++) {
+        for (let z = 0; z < N; z++) {
+          newGrid[N - 1 - x][y][z] = g[x][y][z];
+        }
       }
-      current = rotateGrid(current, "y");
     }
-    current = rotateGrid(g, "z");
-    for (let i = 0; i < 4; i++) {
-      signatures.add(flattenGrid(current));
-      current = rotateGrid(current, "y");
+    // 2. Swap chiral piece identities
+    for (let x = 0; x < N; x++) {
+      for (let y = 0; y < N; y++) {
+        for (let z = 0; z < N; z++) {
+          const piece = newGrid[x][y][z];
+          if (chiralSwapMap.has(piece)) {
+            newGrid[x][y][z] = chiralSwapMap.get(piece);
+          }
+        }
+      }
     }
-    current = rotateGrid(g, "z");
-    current = rotateGrid(current, "z");
-    current = rotateGrid(current, "z");
-    for (let i = 0; i < 4; i++) {
-      signatures.add(flattenGrid(current));
-      current = rotateGrid(current, "y");
-    }
+    return newGrid;
   }
-  addAllRotations(grid);
-  addAllRotations(reflectGrid(grid));
+
+  const gridsToCheck = [grid, reflectAndSwapGrid(grid)];
+
+  gridsToCheck.forEach((initialGrid) => {
+    // This is the corrected array of functions to point each of the 6 faces "up".
+    // The previous version had a duplicate entry here.
+    const faceOrienters = [
+      (g) => g,
+      (g) => rotateGrid(g, "x"),
+      (g) => rotateGrid(rotateGrid(g, "x"), "x"),
+      (g) => rotateGrid(rotateGrid(rotateGrid(g, "x"), "x"), "x"),
+      (g) => rotateGrid(g, "z"),
+      (g) => rotateGrid(rotateGrid(rotateGrid(g, "z"), "z"), "z"), // <-- THE FIX WAS HERE
+    ];
+
+    faceOrienters.forEach((orient) => {
+      let currentGrid = orient(initialGrid);
+      for (let i = 0; i < 4; i++) {
+        signatures.add(flattenGrid(currentGrid));
+        currentGrid = rotateGrid(currentGrid, "y"); // Spin around the "up" axis
+      }
+    });
+  });
+
   return Array.from(signatures).sort()[0];
 }
 
@@ -771,7 +826,10 @@ async function exportSolution() {
   ctx.textBaseline = "middle";
   ctx.fillText(signature, textX, textY);
   const link = document.createElement("a");
-  const filename = solutionNumber > 0 ? `${solutionNumber}-${signature}.png` : `0-${signature}.png`;
+  const filename =
+    solutionNumber > 0
+      ? `${solutionNumber}-${signature}.png`
+      : `0-${signature}.png`;
   link.download = `${filename}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
