@@ -1,3 +1,6 @@
+import { initializeSolver } from './solver.js';
+
+let allCanonicalSolutions = [];
 let ghostPiece = null;
 let placementPlane = null;
 let lastSelectedPiece = null;
@@ -146,6 +149,18 @@ function init() {
   scene.add(placementPlane);
 
   createSomaPieces();
+
+const solverHelpers = {
+    createNewGrid,
+    rotateGrid,
+    reflectGrid,
+    flattenGrid,
+    getCanonicalSignature
+  };
+  
+  // Start the solver and store the result
+  allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
+
   updateGridAndCheckWin();
   addEventListeners();
   animate();
@@ -661,6 +676,8 @@ async function exportSolution() {
   const fontSize = Math.max(12, Math.round(cellSize * 0.32));
   const lineWidth = Math.max(1, Math.round(cellSize / 25));
   const signature = getCanonicalSignature(solutionGrid);
+  const solutionIndex = allCanonicalSolutions.indexOf(signature);
+  const solutionNumber = solutionIndex + 1;
   try {
     await document.fonts.load(`${fontSize}px monoidregular`);
   } catch (e) {
@@ -754,7 +771,8 @@ async function exportSolution() {
   ctx.textBaseline = "middle";
   ctx.fillText(signature, textX, textY);
   const link = document.createElement("a");
-  link.download = `${signature}.png`;
+  const filename = solutionNumber > 0 ? `${solutionNumber}-${signature}.png` : `0-${signature}.png`;
+  link.download = `${filename}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
