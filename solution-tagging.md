@@ -2,9 +2,11 @@
 
 This document explains the method used to generate a unique, canonical signature for any valid Soma cube solution. This signature allows us to determine if a new solution is genuinely unique or simply a rotation or reflection of a previously found solution.
 
-## The Challenge: Symmetry
+## The Challenge: Symmetry and Chirality
 
-A single solved Soma cube can be viewed from many different angles. The cube has 24 rotational symmetries and can also be reflected, resulting in 48 total symmetric orientations for any given solution. To catalogue unique solutions, we need a way to normalize all these different views into a single, consistent representation.
+A single solved Soma cube can be viewed from many different angles. The cube has 24 rotational symmetries. Furthermore, the puzzle contains two **chiral** pieces—pieces that are mirror images of each other. A simple geometric reflection of the entire cube would transform one chiral piece into the other.
+
+To account for all 48 possible symmetric orientations (24 rotations and 24 reflections with chiral swaps), we need a method to normalize every view into a single, consistent representation.
 
 ## The Solution: Canonical Representation
 
@@ -12,15 +14,18 @@ The process involves generating all 48 possible orientations for a given solutio
 
 The algorithm is as follows:
 
-1.  **Grid Representation**: The 3x3x3 solved cube is represented as a 3D array. Each cell in the array stores an identifier for the specific Soma piece that occupies it. We assign a unique letter from 'A' to 'G' to each of the 7 pieces.
+1.  **Grid Representation**: The 3x3x3 solved cube is represented as a 3D array. Each cell in the array stores an identifier for the specific Soma piece that occupies it.
 
-2.  **Generate Symmetries**: For any given solution grid, we programmatically generate all 48 symmetric grids:
+2.  **Generate Rotations**: For a given solution grid, we programmatically generate all 24 unique rotational views by applying a series of rotations around the X, Y, and Z axes.
 
-    - **24 Rotations**: We apply a series of rotations around the X, Y, and Z axes to produce all possible rotational views of the cube.
-    - **24 Reflections**: We take a mirror image (reflection) of the original grid and then apply the same 24 rotations to it.
+3.  **Generate Reflected Orientations**:
 
-3.  **Flatten to a String**: Each of the 48 generated 3D grids is "flattened" into a one-dimensional string of 27 characters. This is done by iterating through the grid in a fixed, predetermined order (e.g., Y, then X, then Z).
+    - A single mirror image of the grid is created by reflecting it along one axis.
+    - Critically, the identifiers for the two chiral pieces are **swapped** within this reflected grid. This accounts for the fact that a reflection transforms one into the other.
+    - The same 24 rotations from the previous step are then applied to this new, reflected-and-swapped grid.
 
-4.  **Find the Canonical Signature**: We now have 48 different strings, each representing the same solution from a different perspective. These strings are sorted alphabetically (lexicographically), and the very first one in the sorted list is chosen.
+4.  **Flatten to a String**: Each of the 48 generated 3D grids (24 from the original, 24 from the reflection) is "flattened" into a one-dimensional string of 27 characters. This is done by iterating through the grid in a fixed, predetermined order (e.g., along the Y-axis, then X, then Z).
 
-This "smallest" string is the **canonical signature**. Because this process is deterministic, any valid solution, no matter its initial orientation, will always produce the exact same canonical signature. This allows for robust and error-free cataloguing of the 240 unique Soma cube solutions.
+5.  **Find the Canonical Signature**: We now have 48 different strings. These strings are sorted alphabetically (lexicographically), and the very first one in the sorted list is chosen.
+
+This "smallest" string is the **canonical signature**. Because this process is deterministic, any valid solution, no matter its initial orientation, will always produce the exact same canonical signature. This allows for the robust cataloguing of the 240 unique Soma cube solutions.

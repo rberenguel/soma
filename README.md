@@ -8,10 +8,11 @@ This is an interactive, web-based 3D puzzle game of the classic Soma cube, built
 
 - **Interactive 3D Interface:** A clean, minimalist 3D environment to manipulate the puzzle pieces.
 - **Drag & Drop and smooth placing:** Move pieces intuitively by dragging them or by selecting and placing them.
-- **Piece Rotation:** Rotate pieces on all three axes (X, Y, Z) using on-screen buttons or keyboard shortcuts.
+- **Piece Rotation:** Rotate pieces on all three axes (X, Y, Z) using the on-screen trackball or keyboard shortcuts.
 - **Camera Controls:** Orbit the camera by dragging the background and zoom using the slider.
 - **Win Detection:** The application automatically detects when the cube is solved successfully.
-- **Solution Export:** Export your completed solution as a PNG image. The image includes a unique canonical signature for your solution, so you can find all 240 solutions.
+- **Solution Export:** Export your completed solution as a PNG image. The image includes a unique canonical signature for your solution as well as the id, so you can find all 240 solutions.
+- **Create a grid with your solutions:** Can you find them all? Create a grid using the `create_grid.sh` shell script (requires ImageMagick).
 
 ## Canonical Solution Tagging
 

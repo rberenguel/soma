@@ -1,7 +1,8 @@
 {
   "name": "Soma Cube 3D",
   "short_name": "SomaCube",
-  "version": "0.3.0",
+  "author": "Ruben Berenguel",
+  "version": "0.4.0",
   "description": "An interactive 3D Soma cube puzzle game.",
   "start_url": "./index.html",
   "display": "standalone",

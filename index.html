@@ -14,16 +14,43 @@
     <link rel="icon" href="./media/favicon.ico" type="image/x-icon" />
   </head>
   <body>
+    <button id="help-btn">?</button>
+
+    <div id="info" class="hidden">
+      <h1>Soma Cube by Ruben Berenguel</h1>
+      <p>The goal is to assemble the seven pieces into a solid 3x3x3 cube.</p>
+      <p>
+        There are <strong>240 unique solutions</strong>. When you solve the
+        cube, you can export the solution. The export is an image that contains
+        a 2D "unfolded" view of the solved cube's faces with the printed unique
+        signature of this solution. This file is named with your solution's
+        index number (1-240) and its unique signature, creating a shareable
+        record of your find. Can you find them all?
+      </p>
+      <p><b>Controls:</b></p>
+      <ul>
+        <li>
+          <b>Select/Place:</b> Click a piece to select it. Drag to place it,
+          they magically try to snap to where you may want them.
+        </li>
+        <li>
+          <b>Orbit Camera:</b> Drag the background. Also deselects pieces.
+        </li>
+        <li><b>Zoom:</b> Use the mouse wheel or pinch-to-zoom.</li>
+        <li>
+          <b>Rotate Piece:</b> When a piece is selected, use the
+          <code>A, R, S</code> or <code>Z, X, V</code> keys, or the rotation
+          trackball that appears on the bottom right.
+        </li>
+      </ul>
+      <button id="close-info-btn">Got it!</button>
+    </div>
+    <div id="blur" class="hidden"></div>
     <div id="container">
       <div id="win-message">
         Congratulations!<br />You solved the cube!
         <button id="export-btn">Export Solution</button>
-      </div>
-      <div id="rotation-controls">
-        <button id="restart-btn" class="rot-btn">R</button>
-        <button id="rot-x" class="rot-btn">X</button>
-        <button id="rot-y" class="rot-btn">Y</button>
-        <button id="rot-z" class="rot-btn">Z</button>
+        <button id="restart-btn" class="rot-btn">Restart</button>
       </div>
     </div>
 

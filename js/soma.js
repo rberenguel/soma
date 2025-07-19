@@ -5,10 +5,11 @@ let ghostPiece = null;
 let placementPlane = null;
 let lastSelectedPiece = null;
 const container = document.getElementById("container");
+const infoPanel = document.getElementById("info");
+const blur = document.getElementById("blur");
 let scene, camera, renderer;
 let raycaster, pointer;
 
-// New state for pinch-to-zoom
 let isPinching = false;
 let pinchStartDistance = 0;
 let pinchStartCameraLength = 0;
@@ -17,11 +18,11 @@ const MIN_ZOOM = 4;
 const MAX_ZOOM = 25;
 
 const pieces = [];
-let chiralSwapMap; // Add this line
+let chiralSwapMap;
 const gridUnit = 1;
 let selectedPiece = null;
 const baseEmissive = new THREE.Color(0x000000);
-const highlightEmissive = new THREE.Color(0xb58900); // Solarized Yellow
+const highlightEmissive = new THREE.Color(0xb58900);
 
 let pointerStartPos = { x: 0, y: 0 };
 let pieceStartPos = new THREE.Vector3();
@@ -184,7 +185,7 @@ function init() {
     console.error("Could not use localStorage. Re-computing solutions.", e);
     allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
   }
-  window.soma_allCanonicalSolutions = allCanonicalSolutions
+  window.soma_allCanonicalSolutions = allCanonicalSolutions;
   updateGridAndCheckWin();
   addEventListeners();
   animate();
@@ -347,18 +348,15 @@ function addEventListeners() {
     }
   };
 
-  document.getElementById("rot-x").addEventListener("pointerdown", (e) => {
-    e.stopPropagation();
-    rotatePiece(new THREE.Vector3(1, 0, 0));
+  document.getElementById("help-btn").addEventListener("click", () => {
+    infoPanel.classList.remove("hidden");
+    blur.classList.remove("hidden");
   });
-  document.getElementById("rot-y").addEventListener("pointerdown", (e) => {
-    e.stopPropagation();
-    rotatePiece(new THREE.Vector3(0, 1, 0));
+  document.getElementById("close-info-btn").addEventListener("click", () => {
+    infoPanel.classList.add("hidden");
+    blur.classList.add("hidden");
   });
-  document.getElementById("rot-z").addEventListener("pointerdown", (e) => {
-    e.stopPropagation();
-    rotatePiece(new THREE.Vector3(0, 0, 1));
-  });
+
   document
     .getElementById("restart-btn")
     .addEventListener("pointerdown", (e) => {
@@ -374,6 +372,9 @@ function addEventListeners() {
     if (e.key.toLowerCase() === "a") rotatePiece(new THREE.Vector3(1, 0, 0));
     if (e.key.toLowerCase() === "r") rotatePiece(new THREE.Vector3(0, 1, 0));
     if (e.key.toLowerCase() === "s") rotatePiece(new THREE.Vector3(0, 0, 1));
+    if (e.key.toLowerCase() === "z") rotatePiece(new THREE.Vector3(1, 0, 0));
+    if (e.key.toLowerCase() === "x") rotatePiece(new THREE.Vector3(0, 1, 0));
+    if (e.key.toLowerCase() === "v") rotatePiece(new THREE.Vector3(0, 0, 1));
     if (e.key === "1") exportSolution();
   });
   container.addEventListener("wheel", (event) => {
@@ -830,7 +831,7 @@ async function exportSolution() {
     solutionNumber > 0
       ? `${solutionNumber}-${signature}.png`
       : `0-${signature}.png`;
-  link.download = `${filename}.png`;
+  link.download = `${filename}`;
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
