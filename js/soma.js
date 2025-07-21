@@ -159,7 +159,8 @@ function setupGame() {
     currentPuzzle.offset = offset; // Store the offset
     const winMessage = document.getElementById("win-message");
     winMessage.innerHTML = `Congratulations!<br />You solved the puzzle!
-      <button id="export-btn">Export Solution</button>
+      <button id="hide-btn">Hide this</button>
+      <button id="export-btn">Export solution</button>
       <button id="restart-btn" class="rot-btn">Restart</button>`;
   } else {
     const targetGeometry = new THREE.BoxGeometry(3, 3, 3);
@@ -407,17 +408,20 @@ function addEventListeners() {
     exportSolution();
   });
 
+  document.getElementById("hide-btn").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    document.getElementById("win-message").style.display = "none";
+  });
+
   document.getElementById("puzzle-menu-btn").addEventListener("click", () => {
     puzzlePanel.classList.toggle("hidden");
     blur.classList.toggle("hidden");
   });
 
-  document
-    .getElementById("cancel-puzzle-btn")
-    .addEventListener("click", () => {
-      puzzlePanel.classList.add("hidden");
-      blur.classList.add("hidden");
-    });
+  document.getElementById("cancel-puzzle-btn").addEventListener("click", () => {
+    puzzlePanel.classList.add("hidden");
+    blur.classList.add("hidden");
+  });
 
   document.getElementById("solve-cube-btn").addEventListener("click", () => {
     sessionStorage.removeItem("selectedPuzzle");
@@ -433,6 +437,48 @@ function addEventListeners() {
     if (e.key.toLowerCase() === "v") rotatePiece(new THREE.Vector3(0, 0, 1));
     if (e.key === "1") exportSolution();
   });
+
+  const nudge = (dir) => {
+    const target = ghostPiece || lastSelectedPiece;
+    if (!target) return;
+    target.position.add(dir);
+    if (!ghostPiece) {
+      updateGrid();
+      checkWin();
+    }
+  };
+
+  document.getElementById("nudge-up").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(0, 1, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round());
+  });
+  document.getElementById("nudge-down").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(0, 1, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round().negate());
+  });
+  document.getElementById("nudge-left").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(1, 0, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round().negate());
+  });
+  document
+    .getElementById("nudge-right")
+    .addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      const cameraUp = new THREE.Vector3(1, 0, 0);
+      cameraUp.applyQuaternion(camera.quaternion);
+      cameraUp.normalize();
+      nudge(cameraUp.round());
+    });
+
   container.addEventListener("wheel", (event) => {
     event.preventDefault();
     const zoomSpeed = 0.001;
@@ -501,17 +547,21 @@ function addEventListeners() {
     if (selectedPiece && ghostPiece) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
-      const allIntersects = raycaster.intersectObjects(
+      /*const allIntersects = raycaster.intersectObjects(
         scene.children,
         true,
+      );*/
+      const allIntersects = raycaster.intersectObjects(pieces, true);
+      const intersectsWithPieces = allIntersects.filter(
+        (i) => i.object instanceof THREE.Mesh && i.face,
       );
       const intersectsWithPiecesOrTarget = allIntersects.filter(
         (i) =>
           i.object.parent?.userData?.isPiece || i.object === targetWireframe,
       );
 
-      if (intersectsWithPiecesOrTarget.length > 0) {
-        const intersect = intersectsWithPiecesOrTarget[0];
+      if (intersectsWithPieces.length > 0) {
+        const intersect = intersectsWithPieces[0];
         const point = intersect.point;
         const normal = intersect.face.normal.clone();
         const normalMatrix = new THREE.Matrix3().getNormalMatrix(
@@ -664,11 +714,19 @@ function checkWin() {
   if (isWin) {
     winMessage.style.display = "block";
     document.getElementById("restart-btn").style.display = "block";
-    document.getElementById("export-btn").style.display = "block";
+    if (gameMode === "PUZZLE") {
+      document.getElementById("hide-btn").style.display = "block";
+    } else {
+      document.getElementById("export-btn").style.display = "block";
+    }
   } else {
     winMessage.style.display = "none";
-    document.getElementById("restart-btn").style.display = "none";
-    document.getElementById("export-btn").style.display = "none";
+    if (document.getElementById("hide-btn"))
+      document.getElementById("hide-btn").style.display = "none";
+    if (document.getElementById("restart-btn"))
+      document.getElementById("restart-btn").style.display = "none";
+    if (document.getElementById("export-btn"))
+      document.getElementById("export-btn").style.display = "none";
   }
 }
 
@@ -976,7 +1034,7 @@ function setupPreview() {
   const size = previewContainer.clientWidth;
 
   previewScene = new THREE.Scene();
-  previewCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  previewCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
   previewCamera.position.set(6, 5, 6);
   previewCamera.lookAt(previewScene.position);
 
@@ -1227,14 +1285,18 @@ window.soma_api = {
   trackball.addEventListener("pointerup", onPointerUpOrCancel);
   trackball.addEventListener("pointercancel", onPointerUpOrCancel);
 
+  const nudgePad = document.getElementById("nudge-pad");
   let isTrackballVisible = false;
+
   setInterval(() => {
     const target = getRotationTarget();
     if (target && !isTrackballVisible) {
       trackball.classList.remove("hidden");
+      nudgePad.classList.remove("hidden");
       isTrackballVisible = true;
     } else if (!target && isTrackballVisible) {
       trackball.classList.add("hidden");
+      nudgePad.classList.add("hidden");
       isTrackballVisible = false;
       if (snapPreview) {
         getScene()?.remove(snapPreview);

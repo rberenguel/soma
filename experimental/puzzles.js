@@ -117,7 +117,8 @@ function addEventListeners() {
   });
 
   document.getElementById("prev-btn").addEventListener("click", () => {
-    currentPuzzleIndex = (currentPuzzleIndex - 1 + PUZZLES.length) % PUZZLES.length;
+    currentPuzzleIndex =
+      (currentPuzzleIndex - 1 + PUZZLES.length) % PUZZLES.length;
     displayPuzzle();
   });
 
@@ -145,7 +146,10 @@ function addEventListeners() {
 
     camera.position.applyAxisAngle(worldUp, -deltaX * sensitivity);
     const right = new THREE.Vector3()
-      .crossVectors(camera.up, camera.getWorldDirection(new THREE.Vector3()).negate())
+      .crossVectors(
+        camera.up,
+        camera.getWorldDirection(new THREE.Vector3()).negate(),
+      )
       .normalize();
     camera.position.applyAxisAngle(right, -deltaY * sensitivity);
     camera.lookAt(scene.position);
