@@ -1,4 +1,5 @@
 import { initializeSolver } from "./solver.js";
+import { loadPuzzles } from "./puzzles.js";
 
 let allCanonicalSolutions = [];
 let ghostPiece = null;
@@ -7,6 +8,7 @@ let lastSelectedPiece = null;
 const container = document.getElementById("container");
 const infoPanel = document.getElementById("info");
 const blur = document.getElementById("blur");
+const puzzlePanel = document.getElementById("puzzle-panel");
 let scene, camera, renderer;
 let raycaster, pointer;
 
@@ -29,8 +31,13 @@ let pieceStartPos = new THREE.Vector3();
 let isDragging = false;
 let isRotatingCamera = false;
 
-let solutionGrid;
-let alignmentLine;
+let solutionGrid = new Map();
+let targetWireframe;
+
+let gameMode = "CUBE"; // 'CUBE' or 'PUZZLE'
+let currentPuzzle = null;
+let puzzles = [];
+let previewRenderer, previewScene, previewCamera, previewWireframe;
 
 const pieceDefs = [
   {
@@ -104,7 +111,21 @@ const pieceDefs = [
   }, // B-Chiral (Orange)
 ];
 
-function init() {
+async function init() {
+  puzzles = await loadPuzzles();
+  setupPreview();
+  populatePuzzleList();
+
+  const savedPuzzle = sessionStorage.getItem("selectedPuzzle");
+  if (savedPuzzle) {
+    currentPuzzle = JSON.parse(savedPuzzle);
+    gameMode = "PUZZLE";
+  }
+
+  setupGame();
+}
+
+function setupGame() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x01171c);
 
@@ -132,14 +153,25 @@ function init() {
   dirLight.position.set(10, 20, 5);
   scene.add(dirLight);
 
-  const targetGeometry = new THREE.BoxGeometry(3, 3, 3);
-  const edges = new THREE.EdgesGeometry(targetGeometry);
-  const line = new THREE.LineSegments(
-    edges,
-    new THREE.LineBasicMaterial({ color: 0x586e75 }),
-  );
-  line.position.set(0, 1, 0);
-  scene.add(line);
+  if (gameMode === "PUZZLE") {
+    const { puzzleGroup, offset } = generatePuzzleWireframe(currentPuzzle.grid);
+    targetWireframe = puzzleGroup;
+    currentPuzzle.offset = offset; // Store the offset
+    const winMessage = document.getElementById("win-message");
+    winMessage.innerHTML = `Congratulations!<br />You solved the puzzle!
+      <button id="hide-btn">Hide this</button>
+      <button id="export-btn">Export solution</button>
+      <button id="restart-btn" class="rot-btn">Restart</button>`;
+  } else {
+    const targetGeometry = new THREE.BoxGeometry(3, 3, 3);
+    const edges = new THREE.EdgesGeometry(targetGeometry);
+    targetWireframe = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0x586e75 }),
+    );
+    targetWireframe.position.set(0, 1, 0);
+  }
+  scene.add(targetWireframe);
 
   const planeGeo = new THREE.PlaneGeometry(100, 100);
   const planeMat = new THREE.MeshBasicMaterial({
@@ -154,39 +186,45 @@ function init() {
   chiralSwapMap = new Map([
     [pieces[5], pieces[6]],
     [pieces[6], pieces[5]],
-  ]); // Add this line
-  const solverHelpers = {
-    createNewGrid,
-    rotateGrid,
-    reflectGrid,
-    flattenGrid,
-    getCanonicalSignature,
-  };
+  ]);
 
-  const solutionsCacheKey = "somaSolutions_v1";
-  try {
-    const cachedSolutions = localStorage.getItem(solutionsCacheKey);
-    if (cachedSolutions) {
-      console.log("Loading solutions from localStorage cache.");
-      allCanonicalSolutions = JSON.parse(cachedSolutions);
-    } else {
-      console.log("No cache found. Computing solutions...");
+  if (gameMode === "CUBE") {
+    const solverHelpers = {
+      createNewGrid,
+      rotateGrid,
+      reflectGrid,
+      flattenGrid,
+      getCanonicalSignature,
+    };
+    const solutionsCacheKey = "somaSolutions_v1";
+    try {
+      const cachedSolutions = localStorage.getItem(solutionsCacheKey);
+      if (cachedSolutions) {
+        allCanonicalSolutions = JSON.parse(cachedSolutions);
+      } else {
+        allCanonicalSolutions = initializeSolver(
+          pieceDefs,
+          pieces,
+          solverHelpers,
+        );
+        localStorage.setItem(
+          solutionsCacheKey,
+          JSON.stringify(allCanonicalSolutions),
+        );
+      }
+    } catch (e) {
+      console.error("Could not use localStorage. Re-computing solutions.", e);
       allCanonicalSolutions = initializeSolver(
         pieceDefs,
         pieces,
         solverHelpers,
       );
-      localStorage.setItem(
-        solutionsCacheKey,
-        JSON.stringify(allCanonicalSolutions),
-      );
     }
-  } catch (e) {
-    console.error("Could not use localStorage. Re-computing solutions.", e);
-    allCanonicalSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
+    window.soma_allCanonicalSolutions = allCanonicalSolutions;
   }
-  window.soma_allCanonicalSolutions = allCanonicalSolutions;
-  updateGridAndCheckWin();
+
+  updateGrid();
+  checkWin();
   addEventListeners();
   animate();
 }
@@ -295,7 +333,8 @@ function deselectPiece() {
   }
 
   selectedPiece = null;
-  updateGridAndCheckWin();
+  updateGrid();
+  checkWin();
 }
 
 function getPointersDistance(pointers) {
@@ -344,7 +383,8 @@ function addEventListeners() {
     target.quaternion.setFromEuler(euler);
 
     if (!ghostPiece) {
-      updateGridAndCheckWin();
+      updateGrid();
+      checkWin();
     }
   };
 
@@ -368,6 +408,26 @@ function addEventListeners() {
     exportSolution();
   });
 
+  document.getElementById("hide-btn").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    document.getElementById("win-message").style.display = "none";
+  });
+
+  document.getElementById("puzzle-menu-btn").addEventListener("click", () => {
+    puzzlePanel.classList.toggle("hidden");
+    blur.classList.toggle("hidden");
+  });
+
+  document.getElementById("cancel-puzzle-btn").addEventListener("click", () => {
+    puzzlePanel.classList.add("hidden");
+    blur.classList.add("hidden");
+  });
+
+  document.getElementById("solve-cube-btn").addEventListener("click", () => {
+    sessionStorage.removeItem("selectedPuzzle");
+    window.location.reload();
+  });
+
   document.addEventListener("keyup", (e) => {
     if (e.key.toLowerCase() === "a") rotatePiece(new THREE.Vector3(1, 0, 0));
     if (e.key.toLowerCase() === "r") rotatePiece(new THREE.Vector3(0, 1, 0));
@@ -377,6 +437,48 @@ function addEventListeners() {
     if (e.key.toLowerCase() === "v") rotatePiece(new THREE.Vector3(0, 0, 1));
     if (e.key === "1") exportSolution();
   });
+
+  const nudge = (dir) => {
+    const target = ghostPiece || lastSelectedPiece;
+    if (!target) return;
+    target.position.add(dir);
+    if (!ghostPiece) {
+      updateGrid();
+      checkWin();
+    }
+  };
+
+  document.getElementById("nudge-up").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(0, 1, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round());
+  });
+  document.getElementById("nudge-down").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(0, 1, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round().negate());
+  });
+  document.getElementById("nudge-left").addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    const cameraUp = new THREE.Vector3(1, 0, 0);
+    cameraUp.applyQuaternion(camera.quaternion);
+    cameraUp.normalize();
+    nudge(cameraUp.round().negate());
+  });
+  document
+    .getElementById("nudge-right")
+    .addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      const cameraUp = new THREE.Vector3(1, 0, 0);
+      cameraUp.applyQuaternion(camera.quaternion);
+      cameraUp.normalize();
+      nudge(cameraUp.round());
+    });
+
   container.addEventListener("wheel", (event) => {
     event.preventDefault();
     const zoomSpeed = 0.001;
@@ -389,7 +491,6 @@ function addEventListeners() {
     if (event.target !== renderer.domElement) return;
     addPointer(event);
 
-    // Handle pinch-to-zoom for two-finger touch
     if (event.pointerType === "touch" && activePointers.length === 2) {
       isPinching = true;
       isDragging = false;
@@ -406,16 +507,12 @@ function addEventListeners() {
 
     const intersected = getIntersectedObject();
     if (intersected) {
-      // Select a piece if intersected
       if (selectedPiece !== intersected) selectPiece(intersected);
     } else if (selectedPiece) {
-      // Place the selected piece if clicking on empty space
       selectedPiece.position.copy(ghostPiece.position);
-      selectedPiece.quaternion.copy(ghostPiece.quaternion); // Typo corrected here
+      selectedPiece.quaternion.copy(ghostPiece.quaternion);
       deselectPiece();
     } else {
-      // If no piece is selected or intersected, initiate camera rotation
-      // This was previously restricted to mouse events, causing the bug
       isRotatingCamera = true;
       deselectPiece();
       lastSelectedPiece = null;
@@ -450,10 +547,19 @@ function addEventListeners() {
     if (selectedPiece && ghostPiece) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
+      /*const allIntersects = raycaster.intersectObjects(
+        scene.children,
+        true,
+      );*/
       const allIntersects = raycaster.intersectObjects(pieces, true);
       const intersectsWithPieces = allIntersects.filter(
         (i) => i.object instanceof THREE.Mesh && i.face,
       );
+      const intersectsWithPiecesOrTarget = allIntersects.filter(
+        (i) =>
+          i.object.parent?.userData?.isPiece || i.object === targetWireframe,
+      );
+
       if (intersectsWithPieces.length > 0) {
         const intersect = intersectsWithPieces[0];
         const point = intersect.point;
@@ -509,8 +615,6 @@ function addEventListeners() {
       isPinching = false;
     }
 
-    // This block now correctly handles placing a piece on release
-    // for both touch and mouse.
     if (selectedPiece && ghostPiece) {
       selectedPiece.position.copy(ghostPiece.position);
       selectedPiece.quaternion.copy(ghostPiece.quaternion);
@@ -525,56 +629,110 @@ function addEventListeners() {
   container.addEventListener("pointercancel", onPointerUpOrCancel);
 }
 
-function updateGridAndCheckWin() {
-  const gridSize = 3;
-  solutionGrid = Array(gridSize)
-    .fill(0)
-    .map(() =>
-      Array(gridSize)
-        .fill(0)
-        .map(() => Array(gridSize).fill(null)),
-    );
-  let occupiedCount = 0;
+function updateGrid() {
+  solutionGrid.clear();
+  let hasOverlap = false;
 
   for (const piece of pieces) {
     for (const cubeGroup of piece.children) {
       const worldPos = new THREE.Vector3();
       cubeGroup.getWorldPosition(worldPos);
 
-      const gx = Math.round(worldPos.x) + 1;
+      const gx = Math.round(worldPos.x);
       const gy = Math.round(worldPos.y);
-      const gz = Math.round(worldPos.z) + 1;
+      const gz = Math.round(worldPos.z);
+      const key = `${gx},${gy},${gz}`;
 
-      if (
-        gx >= 0 &&
-        gx < gridSize &&
-        gy >= 0 &&
-        gy < gridSize &&
-        gz >= 0 &&
-        gz < gridSize
-      ) {
-        if (solutionGrid[gx][gy][gz]) {
-          document.getElementById("win-message").style.display = "none";
-          document.getElementById("restart-btn").style.display = "none";
-          return;
-        }
-        solutionGrid[gx][gy][gz] = piece;
-        occupiedCount++;
+      if (solutionGrid.has(key)) {
+        hasOverlap = true;
       }
+      solutionGrid.set(key, piece);
+    }
+  }
+  // Note: Overlap detection is implicit. We can add explicit UI feedback later if needed.
+}
+
+function checkWin() {
+  const winMessage = document.getElementById("win-message");
+  let isWin = false;
+
+  if (gameMode === "CUBE") {
+    let occupiedCount = 0;
+    for (let x = -1; x <= 1; x++) {
+      for (let y = 0; y <= 2; y++) {
+        for (let z = -1; z <= 1; z++) {
+          if (solutionGrid.has(`${x},${y},${z}`)) {
+            occupiedCount++;
+          }
+        }
+      }
+    }
+    if (occupiedCount === 27 && solutionGrid.size === 27) {
+      isWin = true;
+    }
+  } else if (currentPuzzle) {
+    const puzzleGrid = currentPuzzle.grid;
+    const offset = currentPuzzle.offset;
+    const [width, height, depth] = [
+      puzzleGrid.length,
+      puzzleGrid[0].length,
+      puzzleGrid[0][0].length,
+    ];
+    let targetCellCount = 0;
+    let filledCorrectly = 0;
+
+    for (let px = 0; px < width; px++) {
+      for (let py = 0; py < height; py++) {
+        for (let pz = 0; pz < depth; pz++) {
+          if (puzzleGrid[px][py][pz] === 1) {
+            targetCellCount++;
+            // Transform puzzle file coordinates to world coordinates
+            const vx = px - offset.x;
+            const vy = py - offset.y;
+            const vz = pz - offset.z;
+            // Apply rotation
+            const wx = vx;
+            const wy = -vz;
+            const wz = vy;
+
+            if (solutionGrid.has(`${wx},${wy},${wz}`)) {
+              filledCorrectly++;
+            }
+          }
+        }
+      }
+    }
+
+    if (
+      filledCorrectly === targetCellCount &&
+      solutionGrid.size === targetCellCount
+    ) {
+      isWin = true;
     }
   }
 
-  if (occupiedCount === 27) {
-    document.getElementById("win-message").style.display = "block";
+  if (isWin) {
+    winMessage.style.display = "block";
     document.getElementById("restart-btn").style.display = "block";
+    if (gameMode === "PUZZLE") {
+      document.getElementById("hide-btn").style.display = "block";
+    } else {
+      document.getElementById("export-btn").style.display = "block";
+    }
   } else {
-    document.getElementById("win-message").style.display = "none";
-    document.getElementById("restart-btn").style.display = "none";
+    winMessage.style.display = "none";
+    if (document.getElementById("hide-btn"))
+      document.getElementById("hide-btn").style.display = "none";
+    if (document.getElementById("restart-btn"))
+      document.getElementById("restart-btn").style.display = "none";
+    if (document.getElementById("export-btn"))
+      document.getElementById("export-btn").style.display = "none";
   }
 }
 
 function animate() {
   requestAnimationFrame(animate);
+  renderPreview();
   renderer.render(scene, camera);
 }
 
@@ -592,7 +750,8 @@ function restartGame() {
 
   document.getElementById("win-message").style.display = "none";
   document.getElementById("restart-btn").style.display = "none";
-  updateGridAndCheckWin();
+  updateGrid();
+  checkWin();
 }
 
 function createNewGrid() {
@@ -662,20 +821,12 @@ function flattenGrid(grid) {
   return s;
 }
 
-// In soma.js, replace the existing getCanonicalSignature function
-
-// In soma.js, replace the entire getCanonicalSignature function
-
-// In soma.js, replace the entire getCanonicalSignature function
-
-function getCanonicalSignature(grid) {
+function getCanonicalSignature(grid3d) {
   const signatures = new Set();
 
-  // This helper correctly reflects the grid AND swaps the chiral pieces
   function reflectAndSwapGrid(g) {
     const newGrid = createNewGrid();
     const N = 3;
-    // 1. Geometric reflection
     for (let x = 0; x < N; x++) {
       for (let y = 0; y < N; y++) {
         for (let z = 0; z < N; z++) {
@@ -683,7 +834,6 @@ function getCanonicalSignature(grid) {
         }
       }
     }
-    // 2. Swap chiral piece identities
     for (let x = 0; x < N; x++) {
       for (let y = 0; y < N; y++) {
         for (let z = 0; z < N; z++) {
@@ -697,25 +847,23 @@ function getCanonicalSignature(grid) {
     return newGrid;
   }
 
-  const gridsToCheck = [grid, reflectAndSwapGrid(grid)];
+  const gridsToCheck = [grid3d, reflectAndSwapGrid(grid3d)];
 
   gridsToCheck.forEach((initialGrid) => {
-    // This is the corrected array of functions to point each of the 6 faces "up".
-    // The previous version had a duplicate entry here.
     const faceOrienters = [
       (g) => g,
       (g) => rotateGrid(g, "x"),
       (g) => rotateGrid(rotateGrid(g, "x"), "x"),
       (g) => rotateGrid(rotateGrid(rotateGrid(g, "x"), "x"), "x"),
       (g) => rotateGrid(g, "z"),
-      (g) => rotateGrid(rotateGrid(rotateGrid(g, "z"), "z"), "z"), // <-- THE FIX WAS HERE
+      (g) => rotateGrid(rotateGrid(rotateGrid(g, "z"), "z"), "z"),
     ];
 
     faceOrienters.forEach((orient) => {
       let currentGrid = orient(initialGrid);
       for (let i = 0; i < 4; i++) {
         signatures.add(flattenGrid(currentGrid));
-        currentGrid = rotateGrid(currentGrid, "y"); // Spin around the "up" axis
+        currentGrid = rotateGrid(currentGrid, "y");
       }
     });
   });
@@ -724,14 +872,29 @@ function getCanonicalSignature(grid) {
 }
 
 async function exportSolution() {
+  if (gameMode === "PUZZLE") {
+    exportPuzzleSolution();
+    return;
+  }
+
+  const grid3d = createNewGrid();
+  for (let x = -1; x <= 1; x++) {
+    for (let y = 0; y <= 2; y++) {
+      for (let z = -1; z <= 1; z++) {
+        const key = `${x},${y},${z}`;
+        if (solutionGrid.has(key)) {
+          grid3d[x + 1][y][z + 1] = solutionGrid.get(key);
+        }
+      }
+    }
+  }
+
   const gridSize = 3;
-  // Increase this value to make the exported image larger.
   const cellSize = 100;
-  // Scale padding, font size, and line width based on the cell size.
   const padding = Math.round(cellSize / 5);
   const fontSize = Math.max(12, Math.round(cellSize * 0.32));
   const lineWidth = Math.max(1, Math.round(cellSize / 25));
-  const signature = getCanonicalSignature(solutionGrid);
+  const signature = getCanonicalSignature(grid3d);
   const solutionIndex = allCanonicalSolutions.indexOf(signature);
   const solutionNumber = solutionIndex + 1;
   try {
@@ -772,7 +935,7 @@ async function exportSolution() {
   for (let x = 0; x < gridSize; x++) {
     for (let y = 0; y < gridSize; y++) {
       for (let z = 0; z < gridSize; z++) {
-        const piece = solutionGrid[x][y][z];
+        const piece = grid3d[x][y][z];
         if (!piece) continue;
         const color =
           "#" + piece.children[0].children[0].material.color.getHexString();
@@ -836,11 +999,148 @@ async function exportSolution() {
   link.click();
 }
 
+function exportPuzzleSolution() {
+  const tempCamera = new THREE.PerspectiveCamera(
+    30,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000,
+  );
+  tempCamera.position.set(10, 7, 10);
+  tempCamera.lookAt(scene.position);
+
+  renderer.render(scene, tempCamera);
+
+  const canvas = document.createElement("canvas");
+  const canvasSize = 1024;
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(renderer.domElement, 0, 0, canvasSize, canvasSize);
+
+  ctx.fillStyle = "#93a1a1";
+  ctx.font = `bold 48px "Inter"`;
+  ctx.textAlign = "center";
+  ctx.fillText(currentPuzzle.name, canvasSize / 2, 60);
+
+  const link = document.createElement("a");
+  link.download = `${currentPuzzle.name}-solution.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+function setupPreview() {
+  const previewContainer = document.getElementById("puzzle-preview");
+  const size = previewContainer.clientWidth;
+
+  previewScene = new THREE.Scene();
+  previewCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+  previewCamera.position.set(6, 5, 6);
+  previewCamera.lookAt(previewScene.position);
+
+  previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  previewRenderer.setSize(size, size);
+  previewContainer.appendChild(previewRenderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0x93a1a1, 1.2);
+  previewScene.add(ambientLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(10, 20, 5);
+  previewScene.add(dirLight);
+}
+
+function renderPreview() {
+  if (previewWireframe) {
+    previewWireframe.rotation.y += 0.01;
+    previewRenderer.render(previewScene, previewCamera);
+  }
+}
+
+function populatePuzzleList() {
+  const puzzleList = document.getElementById("puzzle-list");
+  puzzleList.innerHTML = "";
+  puzzles.forEach((puzzle) => {
+    const item = document.createElement("div");
+    item.textContent = puzzle.name;
+    item.classList.add("puzzle-item");
+
+    item.addEventListener("click", () => {
+      sessionStorage.setItem("selectedPuzzle", JSON.stringify(puzzle));
+      window.location.reload();
+    });
+
+    item.addEventListener("mouseenter", () => {
+      if (previewWireframe) {
+        previewScene.remove(previewWireframe);
+      }
+      const { puzzleGroup } = generatePuzzleWireframe(puzzle.grid, true);
+      previewWireframe = puzzleGroup;
+      previewScene.add(previewWireframe);
+    });
+
+    puzzleList.appendChild(item);
+  });
+}
+
+function generatePuzzleWireframe(grid, forPreview = false) {
+  const puzzleGroup = new THREE.Group();
+  const lineMaterial = new THREE.LineBasicMaterial({
+    color: forPreview ? 0x93a1a1 : 0x586e75,
+  });
+  const [width, height, depth] = [
+    grid.length,
+    grid[0].length,
+    grid[0][0].length,
+  ];
+
+  const barycenter = new THREE.Vector3(0, 0, 0);
+  let cubeCount = 0;
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      for (let z = 0; z < depth; z++) {
+        if (grid[x][y][z] === 1) {
+          barycenter.add(new THREE.Vector3(x, y, z));
+          cubeCount++;
+        }
+      }
+    }
+  }
+
+  if (cubeCount > 0) {
+    barycenter.divideScalar(cubeCount);
+  }
+
+  const offset = barycenter.clone().round();
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      for (let z = 0; z < depth; z++) {
+        if (grid[x][y][z] === 1) {
+          const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+          const edges = new THREE.EdgesGeometry(cubeGeo);
+          const line = new THREE.LineSegments(edges, lineMaterial);
+
+          line.position.set(x - offset.x, y - offset.y, z - offset.z);
+
+          puzzleGroup.add(line);
+        }
+      }
+    }
+  }
+
+  puzzleGroup.rotation.x = Math.PI / 2;
+  return { puzzleGroup, offset };
+}
+
 init();
 
 window.soma_api = {
   getRotationTarget: () => ghostPiece || lastSelectedPiece,
-  updateGrid: () => updateGridAndCheckWin(),
+  updateGrid: () => {
+    updateGrid();
+    checkWin();
+  },
   getScene: () => scene,
 };
 
@@ -971,14 +1271,11 @@ window.soma_api = {
 
     const target = getRotationTarget();
 
-    // ** THE FIX IS HERE **
-    // First, apply the final rotation from the preview.
     if (target && snapPreview) {
       target.quaternion.copy(snapPreview.quaternion);
       updateGrid();
     }
 
-    // THEN, clean up the preview object.
     if (snapPreview) {
       getScene()?.remove(snapPreview);
       snapPreview = null;
@@ -988,14 +1285,18 @@ window.soma_api = {
   trackball.addEventListener("pointerup", onPointerUpOrCancel);
   trackball.addEventListener("pointercancel", onPointerUpOrCancel);
 
+  const nudgePad = document.getElementById("nudge-pad");
   let isTrackballVisible = false;
+
   setInterval(() => {
     const target = getRotationTarget();
     if (target && !isTrackballVisible) {
       trackball.classList.remove("hidden");
+      nudgePad.classList.remove("hidden");
       isTrackballVisible = true;
     } else if (!target && isTrackballVisible) {
       trackball.classList.add("hidden");
+      nudgePad.classList.add("hidden");
       isTrackballVisible = false;
       if (snapPreview) {
         getScene()?.remove(snapPreview);
