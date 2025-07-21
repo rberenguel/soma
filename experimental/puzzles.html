@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soma Puzzle Previewer</title>
+    <style>
+        body { margin: 0; background-color: #01171c; color: #93a1a1; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui-container { position: absolute; top: 10px; left: 10px; z-index: 100; background-color: rgba(7, 54, 66, 0.8); padding: 10px; border-radius: 5px;}
+        button { margin: 5px; }
+    </style>
+</head>
+<body>
+    <div id="ui-container">
+        <h3 id="puzzle-name"></h3>
+        <button id="prev-btn">Previous</button>
+        <button id="next-btn">Next</button>
+    </div>
+    <div id="container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="puzzles.js" type="module"></script>
+</body>
+</html>
