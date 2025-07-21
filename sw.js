@@ -1,4 +1,4 @@
-const CACHE_NAME = "soma-cache-v0.4.0";
+const CACHE_NAME = "soma-cache-v0.5.0";
 const urlsToCache = [
   "./",
   "./index.html",
@@ -16,6 +16,7 @@ const urlsToCache = [
   "./fonts/monoid-bold.woff2",
   "./fonts/monoid-regular.woff2",
   "./fonts/monoid.css",
+  "extra-puzzles/puzzles.md",
 ];
 
 // Install event: opens a cache and adds the core files to it.

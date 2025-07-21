@@ -1,5 +1,3 @@
-// js/puzzles.js
-
 function parseThorleifBlock(blockText) {
   const lines = blockText
     .trim()
@@ -46,7 +44,7 @@ function parseThorleifBlock(blockText) {
 export async function loadPuzzles() {
   const puzzles = [];
   try {
-    const response = await fetch("experimental/puzzles.md");
+    const response = await fetch("extra-puzzles/puzzles.md");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
