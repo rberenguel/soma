@@ -140,6 +140,92 @@ canvas {
   color: #fdf6e3;
 }
 
+#puzzle-menu-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 44px;
+  height: 44px;
+  background-color: #073642;
+  border: 1px solid #586e75;
+  color: #93a1a1;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+#puzzle-panel {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  width: 250px;
+  background-color: rgba(0, 33, 41, 0.9);
+  border: 1px solid #073642;
+  border-radius: 10px;
+  z-index: 11;
+  padding: 15px;
+  color: #93a1a1;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#puzzle-panel.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#puzzle-panel h2 {
+  margin-top: 0;
+  font-size: 18px;
+  color: #268bd2;
+  text-align: center;
+}
+
+#puzzle-preview {
+  width: 100%;
+  height: 150px;
+  margin-bottom: 10px;
+  background-color: #001f27;
+  border-radius: 5px;
+  border: 1px solid #073642;
+}
+
+#puzzle-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  border-top: 1px solid #073642;
+  padding-top: 10px;
+}
+
+.puzzle-item {
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.puzzle-item:hover {
+  background-color: #073642;
+}
+
+#puzzle-panel button {
+  background-color: #859900;
+  color: #fdf6e3;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+  font-weight: bold;
+}
+
+#puzzle-panel button#cancel-puzzle-btn {
+  background-color: #dc322f;
+}
+
+
 #trackball {
   position: absolute;
   bottom: 20px;

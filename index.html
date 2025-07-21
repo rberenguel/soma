@@ -15,17 +15,30 @@
   </head>
   <body>
     <button id="help-btn">?</button>
+    <button id="puzzle-menu-btn">☰</button>
+
+    <div id="puzzle-panel" class="hidden">
+      <h2>Select a Puzzle</h2>
+      <div id="puzzle-preview"></div>
+      <div id="puzzle-list"></div>
+      <button id="solve-cube-btn">Solve Classic Cube</button>
+      <button id="cancel-puzzle-btn">Cancel</button>
+    </div>
 
     <div id="info" class="hidden">
       <h1>Soma Cube by Ruben Berenguel</h1>
-      <p>The goal is to assemble the seven pieces into a solid 3x3x3 cube.</p>
       <p>
-        There are <strong>240 unique solutions</strong>. When you solve the
-        cube, you can export the solution. The export is an image that contains
-        a 2D "unfolded" view of the solved cube's faces with the printed unique
-        signature of this solution. This file is named with your solution's
-        index number (1-240) and its unique signature, creating a shareable
-        record of your find. Can you find them all?
+        The goal is to assemble the seven pieces into a solid 3x3x3 cube or one
+        of the other included puzzle shapes.
+      </p>
+      <p>
+        There are <strong>240 unique solutions</strong> to the classic cube.
+        When you solve the cube, you can export the solution. The export is an
+        image that contains a 2D "unfolded" view of the solved cube's faces with
+        the printed unique signature of this solution. This file is named with
+        your solution's index number (1-240) and its unique signature, creating
+        a shareable record of your find. Can you find them all? For other
+        puzzles, a picture of the solved puzzle is generated.
       </p>
       <p><b>Controls:</b></p>
       <ul>
