@@ -81,8 +81,13 @@
       <button id="nudge-down">↓</button>
     </div>
 
-    <script src="libs/three.min.js"></script>
-
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.161.0/build/three.module.js"
+        }
+      }
+    </script>
     <script type="module" src="js/soma.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
