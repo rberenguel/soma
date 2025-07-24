@@ -193,11 +193,8 @@ canvas {
 }
 
 #puzzle-list {
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
-  margin-top: 10px;
-  border-top: 1px solid #073642;
-  padding-top: 10px;
 }
 
 .puzzle-item {
@@ -207,6 +204,8 @@ canvas {
   margin-bottom: 5px;
   background-color: #002b36; /* Solarized Base03 */
   border: 1px solid #073642; /* Solarized Base02 */
+  margin-right: 0.5em;
+  margin-left: 0.1em;
 }
 
 .puzzle-item:hover,
@@ -360,4 +359,23 @@ canvas {
 #nudge-down {
   grid-column: 2;
   grid-row: 2;
+}
+
+/* Custom Scrollbar Styles for Webkit Browsers */
+#puzzle-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#puzzle-list::-webkit-scrollbar-track {
+  background: #001f27; /* Solarized Base02 */
+  border-radius: 10px;
+}
+
+#puzzle-list::-webkit-scrollbar-thumb {
+  background: #073642; /* Solarized Base01 */
+  border-radius: 10px;
+}
+
+#puzzle-list::-webkit-scrollbar-thumb:hover {
+  background: #586e75; /* Solarized Base00 */
 }
