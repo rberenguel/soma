@@ -2,9 +2,18 @@ const CACHE_NAME = "soma-cache-v0.5.0";
 const urlsToCache = [
   "./",
   "./index.html",
-  "./style.css",
-  "./js/soma.js",
+  "./styles.css",
+  "./js/config.js",
+  "./js/export.js",
+  "./js/grid.js",
+  "./js/interactions.js",
+  "./js/pieces.js",
+  "./js/puzzle.js",
+  "./js/puzzles.js",
   "./js/solver.js",
+  "./js/soma.js",
+  "./js/trackball.js",
+  "./js/ui.js",
   "./libs/three.min.js",
   "./media/icon.png",
   "./media/icon192.png",
@@ -16,7 +25,7 @@ const urlsToCache = [
   "./fonts/monoid-bold.woff2",
   "./fonts/monoid-regular.woff2",
   "./fonts/monoid.css",
-  "extra-puzzles/puzzles.md",
+  "./extra-puzzles/puzzles.md",
 ];
 
 // Install event: opens a cache and adds the core files to it.
