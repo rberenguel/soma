@@ -1,4 +1,27 @@
 import { pieceDefs } from "./config.js";
+import { populatePuzzleList } from "./puzzle.js";
+
+let allPuzzles = [];
+let currentPage = 0;
+const puzzlesPerPage = 10;
+
+function updateDisplayedPuzzles() {
+  const startIndex = currentPage * puzzlesPerPage;
+  const endIndex = startIndex + puzzlesPerPage;
+  const puzzlesToDisplay = allPuzzles.slice(startIndex, endIndex);
+
+  populatePuzzleList(puzzlesToDisplay); // Use the original populatePuzzleList
+
+  // Update pagination info
+  const totalPages = Math.ceil(allPuzzles.length / puzzlesPerPage);
+  document.getElementById("puzzle-page-info").textContent =
+    `${currentPage + 1}/${totalPages}`;
+
+  // Enable/disable pagination buttons
+  document.getElementById("prev-puzzle-page").disabled = currentPage === 0;
+  document.getElementById("next-puzzle-page").disabled =
+    currentPage >= totalPages - 1;
+}
 
 export function restartGame(pieces, updateGrid, checkWin) {
   pieces.forEach((piece, i) => {
@@ -18,10 +41,14 @@ export function restartGame(pieces, updateGrid, checkWin) {
   checkWin();
 }
 
-export function initializeUI(exportSolution, restartGame) {
+export async function initializeUI(exportSolution, restartGame, puzzles) {
   const infoPanel = document.getElementById("info");
   const blur = document.getElementById("blur");
   const puzzlePanel = document.getElementById("puzzle-panel");
+
+  // Load puzzles and render initial list
+  allPuzzles = puzzles;
+  updateDisplayedPuzzles();
 
   document.getElementById("help-btn").addEventListener("click", () => {
     infoPanel.classList.remove("hidden");
@@ -63,5 +90,21 @@ export function initializeUI(exportSolution, restartGame) {
   document.getElementById("solve-cube-btn").addEventListener("click", () => {
     sessionStorage.removeItem("selectedPuzzle");
     window.location.reload();
+  });
+
+  // Pagination event listeners
+  document.getElementById("prev-puzzle-page").addEventListener("click", () => {
+    if (currentPage > 0) {
+      currentPage--;
+      updateDisplayedPuzzles();
+    }
+  });
+
+  document.getElementById("next-puzzle-page").addEventListener("click", () => {
+    const totalPages = Math.ceil(allPuzzles.length / puzzlesPerPage);
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      updateDisplayedPuzzles();
+    }
   });
 }

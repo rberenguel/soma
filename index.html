@@ -21,6 +21,11 @@
       <h2>Select a Puzzle</h2>
       <div id="puzzle-preview"></div>
       <div id="puzzle-list"></div>
+      <div id="puzzle-pagination">
+        <button id="prev-puzzle-page">&#9664;</button>
+        <span id="puzzle-page-info"></span>
+        <button id="next-puzzle-page">&#9654;</button>
+      </div>
       <button id="solve-cube-btn">Solve Classic Cube</button>
       <button id="cancel-puzzle-btn">Cancel</button>
     </div>
@@ -60,6 +65,10 @@
           <b>Rotate Piece:</b> When a piece is selected, use the
           <code>A, R, S</code> or <code>Z, X, V</code> keys, or the rotation
           trackball that appears on the bottom right.
+        </li>
+        <li>
+          <b>Nudge Piece:</b> When a piece is selected, use the visual nudge
+          controls to move it along that visual plane.
         </li>
       </ul>
       <button id="close-info-btn">Got it!</button>

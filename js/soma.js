@@ -185,7 +185,7 @@ function setupGame() {
     boundExport,
   );
 
-  initializeUI(boundExport, boundRestart);
+  initializeUI(boundExport, boundRestart, puzzles);
 
   initializeTrackball(getRotationTarget, () => scene, boundUpdateGrid);
 

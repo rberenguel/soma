@@ -205,6 +205,8 @@ canvas {
   cursor: pointer;
   border-radius: 4px;
   margin-bottom: 5px;
+  background-color: #002b36; /* Solarized Base03 */
+  border: 1px solid #073642; /* Solarized Base02 */
 }
 
 .puzzle-item:hover,
@@ -226,6 +228,39 @@ canvas {
 
 #puzzle-panel button#cancel-puzzle-btn {
   background-color: #dc322f;
+}
+
+#puzzle-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #073642;
+}
+
+#puzzle-pagination button {
+  font-family: "Inter", sans-serif;
+  background-color: #268bd2; /* Solarized Blue */
+  color: #fdf6e3; /* Solarized Light */
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  width: auto;
+  margin-top: 0;
+}
+
+#puzzle-pagination button:disabled {
+  background-color: #073642;
+  color: #586e75;
+  cursor: not-allowed;
+}
+
+#puzzle-page-info {
+  font-size: 14px;
+  color: #93a1a1;
 }
 
 #trackball {
