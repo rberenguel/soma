@@ -1,10 +1,6 @@
 import * as THREE from "three";
 
-export function initializeTrackball(
-  getRotationTarget,
-  getScene,
-  updateGrid,
-) {
+export function initializeTrackball(getRotationTarget, getScene, updateGrid) {
   const trackball = document.createElement("div");
   trackball.id = "trackball";
   trackball.classList.add("hidden");

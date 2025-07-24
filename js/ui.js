@@ -18,10 +18,7 @@ export function restartGame(pieces, updateGrid, checkWin) {
   checkWin();
 }
 
-export function initializeUI(
-  exportSolution,
-  restartGame,
-) {
+export function initializeUI(exportSolution, restartGame) {
   const infoPanel = document.getElementById("info");
   const blur = document.getElementById("blur");
   const puzzlePanel = document.getElementById("puzzle-panel");

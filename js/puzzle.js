@@ -83,25 +83,58 @@ export function renderPreview() {
 export function populatePuzzleList(puzzles) {
   const puzzleList = document.getElementById("puzzle-list");
   puzzleList.innerHTML = "";
+  const isTouchDevice =
+    "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  let currentlyPreviewedItem = null;
+
   puzzles.forEach((puzzle) => {
     const item = document.createElement("div");
     item.textContent = puzzle.name;
     item.classList.add("puzzle-item");
 
-    item.addEventListener("click", () => {
-      sessionStorage.setItem("selectedPuzzle", JSON.stringify(puzzle));
-      window.location.reload();
-    });
-
-    item.addEventListener("mouseenter", () => {
+    const showPreview = () => {
       if (previewWireframe) {
         previewScene.remove(previewWireframe);
       }
       const { puzzleGroup } = generatePuzzleWireframe(puzzle.grid, true);
       previewWireframe = puzzleGroup;
       previewScene.add(previewWireframe);
-    });
+    };
+
+    const selectPuzzle = () => {
+      sessionStorage.setItem("selectedPuzzle", JSON.stringify(puzzle));
+      window.location.reload();
+    };
+
+    if (isTouchDevice) {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (currentlyPreviewedItem === item) {
+          selectPuzzle();
+        } else {
+          if (currentlyPreviewedItem) {
+            currentlyPreviewedItem.classList.remove("previewing");
+          }
+          showPreview();
+          item.classList.add("previewing");
+          currentlyPreviewedItem = item;
+        }
+      });
+    } else {
+      item.addEventListener("click", selectPuzzle);
+      item.addEventListener("mouseenter", showPreview);
+    }
 
     puzzleList.appendChild(item);
   });
+
+  if (isTouchDevice) {
+    document.addEventListener("click", (event) => {
+      const puzzlePanel = document.getElementById("puzzle-panel");
+      if (currentlyPreviewedItem && !puzzlePanel.contains(event.target)) {
+        currentlyPreviewedItem.classList.remove("previewing");
+        currentlyPreviewedItem = null;
+      }
+    });
+  }
 }

@@ -85,6 +85,7 @@ export function checkWin(solutionGrid, gameMode, currentPuzzle) {
   if (isWin) {
     winMessage.style.display = "block";
     document.getElementById("restart-btn").style.display = "block";
+    document.getElementById("hide-btn").style.display = "block";
     if (gameMode === "PUZZLE") {
       document.getElementById("hide-btn").style.display = "block";
     } else {

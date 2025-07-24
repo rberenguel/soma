@@ -207,7 +207,8 @@ canvas {
   margin-bottom: 5px;
 }
 
-.puzzle-item:hover {
+.puzzle-item:hover,
+.puzzle-item.previewing {
   background-color: #073642;
 }
 

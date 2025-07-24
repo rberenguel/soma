@@ -21,10 +21,7 @@ import {
 import { initializeUI, restartGame } from "./ui.js";
 import { exportSolution } from "./export.js";
 import { initializeTrackball } from "./trackball.js";
-import {
-  initializeInteractions,
-  getRotationTarget,
-} from "./interactions.js";
+import { initializeInteractions, getRotationTarget } from "./interactions.js";
 
 let allCanonicalSolutions = [];
 let placementPlane = null;
@@ -78,9 +75,9 @@ function setupGame() {
   raycaster = new THREE.Raycaster();
   pointer = new THREE.Vector2();
 
-  const ambientLight = new THREE.AmbientLight(0x93a1a1, 1.0);
+  const ambientLight = new THREE.AmbientLight(0x93a1a1, 5.8);
   scene.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
   dirLight.position.set(10, 20, 5);
   scene.add(dirLight);
 
@@ -190,11 +187,7 @@ function setupGame() {
 
   initializeUI(boundExport, boundRestart);
 
-  initializeTrackball(
-    getRotationTarget,
-    () => scene,
-    boundUpdateGrid,
-  );
+  initializeTrackball(getRotationTarget, () => scene, boundUpdateGrid);
 
   animate();
 }

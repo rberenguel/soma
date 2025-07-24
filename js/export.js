@@ -170,6 +170,10 @@ export function exportSolution(
   if (gameMode === "PUZZLE") {
     exportPuzzleSolution(scene, renderer, currentPuzzle);
   } else {
-    exportCubeSolution(solutionGrid, getCanonicalSignature, allCanonicalSolutions);
+    exportCubeSolution(
+      solutionGrid,
+      getCanonicalSignature,
+      allCanonicalSolutions,
+    );
   }
 }
