@@ -23,8 +23,18 @@ export function updateGrid(pieces, solutionGrid) {
   // Note: Overlap detection is implicit. We can add explicit UI feedback later if needed.
 }
 
-export function checkWin(solutionGrid, gameMode, currentPuzzle) {
+export function checkWin(
+  solutionGrid,
+  gameMode,
+  currentPuzzle,
+  pieces,
+  chiralSwapMap,
+  allCanonicalSolutions,
+) {
   const winMessage = document.getElementById("win-message");
+  const mainText = document.getElementById("win-message-main-text");
+  const solutionInfo = document.getElementById("solution-info");
+
   let isWin = false;
 
   if (gameMode === "CUBE") {
@@ -40,6 +50,26 @@ export function checkWin(solutionGrid, gameMode, currentPuzzle) {
     }
     if (occupiedCount === 27 && solutionGrid.size === 27) {
       isWin = true;
+      mainText.innerHTML = "Congratulations!<br />You solved the cube!";
+      solutionInfo.textContent = ""; // Clear previous
+
+      if (allCanonicalSolutions && allCanonicalSolutions.length > 0) {
+        const grid3d = createNewGrid();
+        for (let x = -1; x <= 1; x++) {
+          for (let y = 0; y <= 2; y++) {
+            for (let z = -1; z <= 1; z++) {
+              const key = `${x},${y},${z}`;
+              if (solutionGrid.has(key)) {
+                grid3d[x + 1][y][z + 1] = solutionGrid.get(key);
+              }
+            }
+          }
+        }
+        const signature = getCanonicalSignature(grid3d, pieces, chiralSwapMap);
+        const solutionIndex = allCanonicalSolutions.indexOf(signature);
+        const solutionNumber = solutionIndex >= 0 ? solutionIndex + 1 : 0;
+        solutionInfo.textContent = `Solution #${solutionNumber}/240: ${signature}`;
+      }
     }
   } else if (currentPuzzle) {
     const puzzleGrid = currentPuzzle.grid;
@@ -79,26 +109,15 @@ export function checkWin(solutionGrid, gameMode, currentPuzzle) {
       solutionGrid.size === targetCellCount
     ) {
       isWin = true;
+      mainText.innerHTML = "Congratulations!<br />You solved the puzzle!";
+      solutionInfo.textContent = currentPuzzle.name;
     }
   }
 
   if (isWin) {
     winMessage.style.display = "block";
-    document.getElementById("restart-btn").style.display = "block";
-    document.getElementById("hide-btn").style.display = "block";
-    if (gameMode === "PUZZLE") {
-      document.getElementById("hide-btn").style.display = "block";
-    } else {
-      document.getElementById("export-btn").style.display = "block";
-    }
   } else {
     winMessage.style.display = "none";
-    if (document.getElementById("hide-btn"))
-      document.getElementById("hide-btn").style.display = "none";
-    if (document.getElementById("restart-btn"))
-      document.getElementById("restart-btn").style.display = "none";
-    if (document.getElementById("export-btn"))
-      document.getElementById("export-btn").style.display = "none";
   }
 }
 

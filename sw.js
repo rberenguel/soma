@@ -1,4 +1,4 @@
-const CACHE_NAME = "soma-cache-v0.5.0";
+const CACHE_NAME = "soma-cache-v0.6.0";
 const urlsToCache = [
   "./",
   "./index.html",
@@ -14,7 +14,7 @@ const urlsToCache = [
   "./js/soma.js",
   "./js/trackball.js",
   "./js/ui.js",
-  "./libs/three.min.js",
+  "./libs/three.module.js",
   "./media/icon.png",
   "./media/icon192.png",
   "./media/favicon.ico",

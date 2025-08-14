@@ -75,10 +75,13 @@
     <div id="blur" class="hidden"></div>
     <div id="container">
       <div id="win-message">
-        Congratulations!<br />You solved the cube!
-        <button id="export-btn">Export Solution</button>
-        <button id="hide-btn" class="rot-btn">Hide this</button>
-        <button id="restart-btn" class="rot-btn">Restart</button>
+        <div id="win-message-main-text"></div>
+        <div id="solution-info"></div>
+        <div id="win-buttons-container">
+          <button id="export-btn">Export Solution</button>
+          <button id="hide-btn" class="rot-btn">Hide this</button>
+          <button id="restart-btn" class="rot-btn">Restart</button>
+        </div>
       </div>
     </div>
 
@@ -92,7 +95,7 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.161.0/build/three.module.js"
+          "three": "./libs/three.module.js"
         }
       }
     </script>

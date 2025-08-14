@@ -124,9 +124,22 @@ canvas {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   z-index: 1000;
 }
+
+#solution-info {
+  font-family: "monoidregular", monospace;
+  font-size: 14px;
+  color: #fdf6e3;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+#win-buttons-container {
+  margin-top: 20px;
+}
+
 #win-message button {
-  display: block;
-  margin: 20px auto 0;
   background-color: #073642;
   color: #93a1a1;
   border: 1px solid #586e75;
@@ -134,6 +147,7 @@ canvas {
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
+  margin: 0 5px;
 }
 #win-message button:hover {
   background-color: #586e75;
