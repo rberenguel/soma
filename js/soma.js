@@ -85,11 +85,6 @@ function setupGame() {
     const { puzzleGroup, offset } = generatePuzzleWireframe(currentPuzzle.grid);
     targetWireframe = puzzleGroup;
     currentPuzzle.offset = offset; // Store the offset
-    const winMessage = document.getElementById("win-message");
-    winMessage.innerHTML = `Congratulations!<br />You solved the puzzle!
-      <button id="hide-btn">Hide this</button>
-      <button id="export-btn">Export solution</button>
-      <button id="restart-btn" class="rot-btn">Restart</button>`;
   } else {
     const targetGeometry = new THREE.BoxGeometry(3, 3, 3);
     const edges = new THREE.EdgesGeometry(targetGeometry);
@@ -154,7 +149,15 @@ function setupGame() {
   }
 
   const boundUpdateGrid = () => updateGrid(pieces, solutionGrid);
-  const boundCheckWin = () => checkWin(solutionGrid, gameMode, currentPuzzle);
+  const boundCheckWin = () =>
+    checkWin(
+      solutionGrid,
+      gameMode,
+      currentPuzzle,
+      pieces,
+      chiralSwapMap,
+      allCanonicalSolutions,
+    );
   const boundExport = () =>
     exportSolution(
       gameMode,
