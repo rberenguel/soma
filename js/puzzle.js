@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { parseThorleifBlock } from "./puzzles.js";
 
 let previewRenderer, previewScene, previewCamera, previewWireframe;
 
@@ -92,7 +93,19 @@ export function populatePuzzleList(puzzles) {
     item.textContent = puzzle.name;
     item.classList.add("puzzle-item");
 
+    const ensurePuzzleParsed = () => {
+      if (!puzzle.grid) {
+        const parsed = parseThorleifBlock(puzzle.blockText);
+        if (parsed) {
+          puzzle.grid = parsed.grid;
+        }
+      }
+    };
+
     const showPreview = () => {
+      ensurePuzzleParsed();
+      if (!puzzle.grid) return;
+
       if (previewWireframe) {
         previewScene.remove(previewWireframe);
       }
@@ -102,6 +115,11 @@ export function populatePuzzleList(puzzles) {
     };
 
     const selectPuzzle = () => {
+      ensurePuzzleParsed();
+      if (!puzzle.grid) {
+        console.error("Could not parse puzzle:", puzzle.name);
+        return;
+      }
       sessionStorage.setItem("selectedPuzzle", JSON.stringify(puzzle));
       window.location.reload();
     };

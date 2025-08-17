@@ -52,14 +52,17 @@ export async function loadPuzzles() {
     const codeBlockRegex = /```([\s\S]*?)```/g;
     let match;
     while ((match = codeBlockRegex.exec(markdownText)) !== null) {
-      const puzzle = parseThorleifBlock(match[1]);
-      if (puzzle) {
-        puzzles.push(puzzle);
+      const blockText = match[1].trim();
+      const name = blockText.split("\n")[0].substring(1).trim();
+      if (name) {
+        puzzles.push({ name, blockText });
       }
     }
-    console.log(`Loaded ${puzzles.length} puzzles.`);
+    console.log(`Loaded ${puzzles.length} puzzle definitions.`);
   } catch (e) {
     console.error("Failed to load or parse puzzles.md:", e);
   }
   return puzzles;
 }
+
+export { parseThorleifBlock };
