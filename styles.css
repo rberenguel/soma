@@ -5,6 +5,7 @@ body {
   background-color: #01171c; /* Darker Background */
   color: #839496;
   user-select: none;
+  touch-action: manipulation;
   -webkit-user-select: none;
   -moz-user-select: none;
 }
