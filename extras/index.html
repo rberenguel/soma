@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <title>Soma Cube Solution Analysis</title>
-    <script src="../libs/mermaid.js"></script>
+    <script src="./libs/mermaid.js"></script>
+    <script src="./libs/svgpanzoom.js"></script>
+    <script src="./libs/d3v6.js"></script>
     <link href="../fonts/inter.css" rel="stylesheet" />
     <link href="../fonts/monoid.css" rel="stylesheet" />
     <style>
@@ -94,6 +96,68 @@
       .explanation ul {
         padding-left: 20px;
       }
+      #meta-graph-viz {
+        height: 50vh;
+      }
+      [data-id="A"] > rect {
+        fill: #268bd2 !important;
+      }
+      [data-id="B"] > rect {
+        fill: #6c71c4 !important;
+      }
+      [data-id="C"] > rect {
+        fill: #b58900 !important;
+      }
+      [data-id="D"] > rect {
+        fill: #859900 !important;
+      }
+      [data-id="E"] > rect {
+        fill: #dc322f !important;
+      }
+      [data-id="F"] > rect {
+        fill: #d33682 !important;
+      }
+      [data-id="G"] > rect {
+        fill: #cb4b16 !important;
+      }
+      [data-id="A"] span {
+        color: black !important;
+      }
+      [data-id="B"] span {
+        color: black !important;
+      }
+      [data-id="C"] span {
+        color: black !important;
+      }
+      [data-id="D"] span {
+        color: black !important;
+      }
+      [data-id="E"] span {
+        color: black !important;
+      }
+      [data-id="F"] span {
+        color: black !important;
+      }
+      [data-id="G"] span {
+        color: black !important;
+      }
+      .viz-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        gap: 1rem;
+      }
+      .chord-diagram-container,
+      .mermaid-diagram-container {
+        flex: 1;
+        min-width: 0;
+      }
+      .mermaid-diagram-container {
+        background-color: #002b36;
+        padding: 1rem;
+        border-radius: 8px;
+      }
     </style>
   </head>
   <body>
@@ -103,7 +167,10 @@
         The solver finds all 240 unique solutions, which are then grouped into
         unique structural classes based on their piece-adjacency graphs.
       </p>
-
+      <div id="controls">
+        <button id="compute-classes-btn">Compute Graph Classes</button>
+        <button id="compute-meta-btn" disabled>Compute Meta-Graph</button>
+      </div>
       <details>
         <summary>How are graph classes calculated?</summary>
         <div class="explanation">
@@ -161,8 +228,18 @@
           </p>
         </div>
       </details>
-
-      <div id="results"></div>
+      <div id="meta-graph-container" style="display: none">
+        <h2>Meta-Graph of Solution Classes</h2>
+        <p>
+          This graph connects the unique solution classes. An edge exists if a
+          solution in one can be transformed into a solution in the other by
+          moving two pieces.
+        </p>
+        <div id="meta-graph-viewport">
+          <div id="meta-graph-viz"></div>
+        </div>
+      </div>
+      <div id="results-container"></div>
     </div>
     <script type="importmap">
       {

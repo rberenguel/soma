@@ -118,3 +118,81 @@ export function getGraphCanonicalLabel(graph) {
   }
   return canonicalString;
 }
+
+export function generateMetaGraph(allSolutions, graphClasses, pieces) {
+  console.log("Generating meta-graph based on 2-piece moves...");
+  const metaGraph = new Map();
+
+  const signatureToClassMap = new Map();
+  graphClasses.forEach((signatures, label) => {
+    signatures.forEach((sig) => signatureToClassMap.set(sig, label));
+  });
+
+  graphClasses.forEach((_, label) => metaGraph.set(label, []));
+
+  const pieceChars = pieces.map((_, i) =>
+    String.fromCharCode("A".charCodeAt(0) + i),
+  );
+
+  const getCoordMaps = (signature) => {
+    const maps = {};
+    pieceChars.forEach((p) => (maps[p] = []));
+    for (let k = 0; k < 27; k++) {
+      const char = signature.charAt(k);
+      if (char !== ".") {
+        const x = Math.floor(k / 9) % 3;
+        const y = k % 3;
+        const z = Math.floor(k / 3) % 3;
+        maps[char].push(`${x},${y},${z}`);
+      }
+    }
+    pieceChars.forEach((p) => maps[p].sort());
+    return maps;
+  };
+
+  for (let i = 0; i < allSolutions.length; i++) {
+    for (let j = i + 1; j < allSolutions.length; j++) {
+      const sig1 = allSolutions[i];
+      const sig2 = allSolutions[j];
+
+      const coords1 = getCoordMaps(sig1);
+      const coords2 = getCoordMaps(sig2);
+
+      const changedPieces = [];
+      for (const piece of pieceChars) {
+        if (coords1[piece].join(";") !== coords2[piece].join(";")) {
+          changedPieces.push(piece);
+        }
+      }
+
+      // --- THE CRITICAL CHANGE IS HERE ---
+      // An edge is a transition involving the minimum of 2 pieces.
+      if (changedPieces.length === 2) {
+        const movedPieces = changedPieces.sort(); // e.g., ['A', 'C']
+        const class1 = signatureToClassMap.get(sig1);
+        const class2 = signatureToClassMap.get(sig2);
+
+        if (class1 !== class2) {
+          const edgeLabel = movedPieces.join(",");
+          if (
+            !metaGraph
+              .get(class1)
+              .some((e) => e.to === class2 && e.pieces === edgeLabel)
+          ) {
+            metaGraph.get(class1).push({ to: class2, pieces: edgeLabel });
+          }
+          if (
+            !metaGraph
+              .get(class2)
+              .some((e) => e.to === class1 && e.pieces === edgeLabel)
+          ) {
+            metaGraph.get(class2).push({ to: class1, pieces: edgeLabel });
+          }
+        }
+      }
+    }
+  }
+  console.log("Meta-graph generation complete.");
+  console.log(metaGraph);
+  return metaGraph;
+}

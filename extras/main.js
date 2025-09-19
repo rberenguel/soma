@@ -4,8 +4,10 @@ import * as gridHelpers from "../js/grid.js";
 import { pieceDefs } from "../js/config.js";
 import {
   generateGraphFromSignature,
+  generateMetaGraph,
   getGraphCanonicalLabel,
 } from "./analysis.js";
+import { renderClassChordDiagram } from "./class_viz.js";
 
 const pieces = pieceDefs.map((def, i) => ({
   id: i,
@@ -28,80 +30,303 @@ console.log("Starting Soma solver for analysis...");
 const allSolutions = initializeSolver(pieceDefs, pieces, solverHelpers);
 console.log(`Solver finished. Found ${allSolutions.length} unique solutions.`);
 
-const solutionGraphs = new Map();
-allSolutions.forEach((sig) => {
-  const graph = generateGraphFromSignature(sig, pieces);
-  solutionGraphs.set(sig, graph);
-});
+// --- CACHE FOR COMPUTED DATA ---
+let solutionGraphs = null;
+let graphClasses = null;
 
-console.log("Classifying graphs by isomorphism...");
-const graphClasses = new Map();
-solutionGraphs.forEach((graph, signature) => {
-  const label = getGraphCanonicalLabel(graph);
-  if (!graphClasses.has(label)) {
-    graphClasses.set(label, []);
-  }
-  graphClasses.get(label).push(signature);
-});
-console.log(`Found ${graphClasses.size} unique graph classes.`);
+// --- BUTTONS AND CONTAINERS ---
+const computeClassesBtn = document.getElementById("compute-classes-btn");
+const computeMetaBtn = document.getElementById("compute-meta-btn");
+const resultsContainer = document.getElementById("results-container");
+const metaGraphContainer = document.getElementById("meta-graph-container");
 
-// --- NEW: Create a map from signature to its original 1-based index ---
-const signatureToIndexMap = new Map();
-allSolutions.forEach((sig, index) => {
-  signatureToIndexMap.set(sig, index + 1);
-});
+// --- ON-DEMAND COMPUTATION FUNCTIONS ---
 
-const resultsContainer = document.getElementById("results");
-let classIndex = 1;
-graphClasses.forEach((signatures, label) => {
-  const classEl = document.createElement("div");
-  classEl.className = "solution";
+/*
+function computeAndRenderClasses() {
+  computeClassesBtn.disabled = true;
+  computeClassesBtn.textContent = 'Computing...';
+  setTimeout(() => {
+    solutionGraphs = new Map();
+    allSolutions.forEach(sig => solutionGraphs.set(sig, generateGraphFromSignature(sig, pieces)));
+    graphClasses = new Map();
+    solutionGraphs.forEach((graph, signature) => {
+      const label = getGraphCanonicalLabel(graph);
+      if (!graphClasses.has(label)) graphClasses.set(label, []);
+      graphClasses.get(label).push(signature);
+    });
+    const signatureToIndexMap = new Map();
+    allSolutions.forEach((sig, index) => signatureToIndexMap.set(sig, index + 1));
+    resultsContainer.innerHTML = '';
+    let classIndex = 0;
+    graphClasses.forEach((signatures, label) => {
+      classIndex++;
+      const classEl = document.createElement('div');
+      classEl.className = 'solution';
+      const representativeGraph = solutionGraphs.get(signatures[0]);
+      
+      const pieceNames = Object.keys(representativeGraph).sort();
+      const nameToIndex = new Map(pieceNames.map((n, i) => [n, i]));
+      const matrix = Array(7).fill(0).map(() => Array(7).fill(0));
+      for (const [node, neighbors] of Object.entries(representativeGraph)) {
+        for (const neighbor of neighbors) {
+          matrix[nameToIndex.get(node)][nameToIndex.get(neighbor)] = 1;
+        }
+      }
+      const pieceColors = ['#268bd2', '#6c71c4', '#b58900', '#859900', '#dc322f', '#d33682', '#cb4b16'];
+      const chordData = { matrix, names: pieceNames, colors: pieceColors };
 
-  const representativeSignature = signatures[0];
-  const representativeGraph = solutionGraphs.get(representativeSignature);
+      
+      
+      // Give each diagram container a unique ID
+      const chordId = `chord-${classIndex}`;
+      const mermaidId = `mermaid-${classIndex}`;
+      
+      classEl.innerHTML = `
+        <h2>Graph Class #${classIndex} (${signatures.length} solutions)</h2>
+        <div class="viz-container">
+          <div class="chord-diagram-container" id="${chordId}"></div>
+          <div class="mermaid-diagram-container" id="${mermaidId}"></div>
+        </div>
+        <p><strong>Signatures in this class:</strong></p>
+        <pre><code></code></pre>`;
+      
+      const codeBlock = classEl.querySelector('code');
+      codeBlock.textContent = signatures.map(sig => `${signatureToIndexMap.get(sig)}: ${sig}`).join('\n');
+      
+      resultsContainer.appendChild(classEl);
 
-  let mermaidSyntax = "graph TD;\n";
-  const drawnEdges = new Set();
-  for (const node in representativeGraph) {
-    representativeGraph[node].forEach((neighbor) => {
-      const edge = [node, neighbor].sort().join("---");
-      if (!drawnEdges.has(edge)) {
-        mermaidSyntax += `    ${edge};\n`;
-        drawnEdges.add(edge);
+      // Render D3 diagram (unchanged)
+      renderClassChordDiagram(`#${chordId}`, chordData);
+      
+      // --- FIX: Render each Mermaid diagram individually using mermaid.render() ---
+      // This avoids the global conflict with the external D3 library.
+      const mermaidContainer = document.getElementById(mermaidId);
+      mermaid.render(mermaidId + '-svg', mermaidSyntax, (svgCode) => {
+          mermaidContainer.innerHTML = svgCode;
+      });
+    });
+
+    computeClassesBtn.textContent = 'Computation Complete';
+    computeMetaBtn.disabled = false;
+    // We no longer need the global mermaid.run() call here
+  }, 10);
+}
+*/
+function computeAndRenderClasses() {
+  computeClassesBtn.disabled = true;
+  computeClassesBtn.textContent = "Computing...";
+  setTimeout(() => {
+    solutionGraphs = new Map();
+    allSolutions.forEach((sig) =>
+      solutionGraphs.set(sig, generateGraphFromSignature(sig, pieces)),
+    );
+    graphClasses = new Map();
+    solutionGraphs.forEach((graph, signature) => {
+      const label = getGraphCanonicalLabel(graph);
+      if (!graphClasses.has(label)) graphClasses.set(label, []);
+      graphClasses.get(label).push(signature);
+    });
+    const signatureToIndexMap = new Map();
+    allSolutions.forEach((sig, index) =>
+      signatureToIndexMap.set(sig, index + 1),
+    );
+    resultsContainer.innerHTML = "";
+    let classIndex = 1;
+    graphClasses.forEach((signatures, label) => {
+      const classEl = document.createElement("div");
+      classEl.className = "solution";
+      const representativeGraph = solutionGraphs.get(signatures[0]);
+
+      // --- Prepare data for the D3 Chord Diagram ---
+      const pieceNames = Object.keys(representativeGraph).sort();
+      const nameToIndex = new Map(pieceNames.map((n, i) => [n, i]));
+      const matrix = Array(7)
+        .fill(0)
+        .map(() => Array(7).fill(0));
+      for (const [node, neighbors] of Object.entries(representativeGraph)) {
+        for (const neighbor of neighbors) {
+          matrix[nameToIndex.get(node)][nameToIndex.get(neighbor)] = 1;
+        }
+      }
+      const pieceColors = [
+        "#268bd2",
+        "#6c71c4",
+        "#b58900",
+        "#859900",
+        "#dc322f",
+        "#d33682",
+        "#cb4b16",
+      ];
+      const chordData = { matrix, names: pieceNames, colors: pieceColors };
+      // --- End data preparation ---
+
+      let mermaidSyntax = "graph TD;\n";
+      const drawnEdges = new Set();
+      for (const node in representativeGraph) {
+        representativeGraph[node].forEach((neighbor) => {
+          const edge = [node, neighbor].sort().join("---");
+          if (!drawnEdges.has(edge)) mermaidSyntax += `    ${edge};\n`;
+          drawnEdges.add(edge);
+        });
+      }
+
+      // Define the new two-column layout
+      classEl.innerHTML = `
+        <h2>Graph Class #${classIndex++} (${signatures.length} solutions)</h2>
+        <div class="viz-container">
+          <div class="chord-diagram-container" id="chord-${classIndex}"></div>
+          <div class="mermaid-diagram-container graph-viz"></div>
+        </div>
+        <p><strong>Signatures in this class:</strong></p>
+        <pre><code></code></pre>`;
+
+      const codeBlock = classEl.querySelector("code");
+      codeBlock.textContent = signatures
+        .map((sig) => `${signatureToIndexMap.get(sig)}: ${sig}`)
+        .join("\n");
+
+      resultsContainer.appendChild(classEl);
+
+      // Render both visualizations
+      renderClassChordDiagram(`#chord-${classIndex}`, chordData);
+
+      const graphViz = classEl.querySelector(".graph-viz");
+      graphViz.textContent = mermaidSyntax;
+      graphViz.classList.add("mermaid");
+    });
+
+    computeClassesBtn.textContent = "Computation Complete";
+    computeMetaBtn.disabled = false;
+    mermaid.run();
+  }, 10);
+}
+
+function computeAndRenderMetaGraph() {
+  computeMetaBtn.disabled = true;
+  computeMetaBtn.textContent = "Computing...";
+  setTimeout(() => {
+    const metaGraph = generateMetaGraph(allSolutions, graphClasses, pieces);
+
+    // --- MODIFIED: Full component discovery ---
+    const connectedComponents = [];
+    const singletonClasses = [];
+    const visited = new Set();
+
+    // First, find all singletons
+    metaGraph.forEach((edges, label) => {
+      if (edges.length === 0) {
+        singletonClasses.push(label);
+        visited.add(label); // Mark them as "visited" so we don't process them again
       }
     });
-  }
 
-  // --- MODIFIED: Rendering logic for signatures ---
+    // Now, find each distinct connected component using BFS
+    for (const startNode of metaGraph.keys()) {
+      if (!visited.has(startNode)) {
+        const component = [];
+        const queue = [startNode];
+        visited.add(startNode);
 
-  // 1. Create the base HTML structure
-  classEl.innerHTML = `
-    <h2>Graph Class #${classIndex++} (${signatures.length} solutions)</h2>
-    <div class="mermaid">${mermaidSyntax}</div>
-    <p><strong>Signatures in this class:</strong></p>
-    <pre><code></code></pre> 
-  `; // Note the empty <code> tag
+        while (queue.length > 0) {
+          const currentNode = queue.shift();
+          component.push(currentNode);
+          const neighbors = metaGraph.get(currentNode).map((edge) => edge.to);
+          for (const neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+              visited.add(neighbor);
+              queue.push(neighbor);
+            }
+          }
+        }
+        connectedComponents.push(component);
+      }
+    }
+    // --- END MODIFICATION ---
 
-  // 2. Generate the text content with indices
-  const signaturesWithIndices = signatures
-    .map((sig) => `${signatureToIndexMap.get(sig)}: ${sig}`)
-    .join("\n");
+    const metaGraphViz = document.getElementById("meta-graph-viz");
+    let mermaidMetaSyntax = "graph TD;\n";
+    let garbuixSyntax = "";
+    const classLabelToNodeId = new Map();
+    let nodeIdCounter = 0;
+    graphClasses.forEach((_, label) => {
+      classLabelToNodeId.set(label, `C${nodeIdCounter++}`);
+    });
 
-  // 3. Find the code block and set its textContent directly to fix spacing
-  const codeBlock = classEl.querySelector("code");
-  codeBlock.textContent = signaturesWithIndices;
+    // --- MODIFIED: Generate a subgraph for EACH component ---
+    connectedComponents.forEach((component, index) => {
+      mermaidMetaSyntax += `    subgraph "Component ${index + 1} (${component.length} classes)"\n`;
+      garbuixSyntax += `cluster component_${index + 1} {\n`;
+      component.forEach((label) => {
+        const nodeId = classLabelToNodeId.get(label);
+        const classNum = parseInt(nodeId.substring(1));
+        const numSols = graphClasses.get(label).length;
+        mermaidMetaSyntax += `        ${nodeId}("Class ${classNum + 1} (${numSols})");\n`;
+        garbuixSyntax += `${nodeId} Class ${classNum + 1} (${numSols})\n`;
+      });
+      mermaidMetaSyntax += "    end\n";
+      garbuixSyntax += `}\n`;
+    });
 
-  resultsContainer.appendChild(classEl);
-});
+    if (singletonClasses.length > 0) {
+      mermaidMetaSyntax += `    subgraph "Isolated Classes (${singletonClasses.length} Singletons)"\n`;
+      garbuixSyntax += `cluster singletons {\n`;
+      singletonClasses.forEach((label) => {
+        const nodeId = classLabelToNodeId.get(label);
+        const classNum = parseInt(nodeId.substring(1));
+        const numSols = graphClasses.get(label).length;
+        mermaidMetaSyntax += `        ${nodeId}("Class ${classNum + 1} (${numSols})");\n`;
+        garbuixSyntax += `${nodeId} Class ${classNum + 1} (${numSols})\n`;
+      });
+      mermaidMetaSyntax += "    end\n";
+      garbuixSyntax += `}\n`;
+    }
+    // --- END MODIFICATION ---
 
-mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    // Add edges (this part is unchanged)
+    metaGraph.forEach((edges, classLabel) => {
+      const fromNodeId = classLabelToNodeId.get(classLabel);
+      edges.forEach((edge) => {
+        const toNodeId = classLabelToNodeId.get(edge.to);
+        if (fromNodeId < toNodeId) {
+          mermaidMetaSyntax += `    ${fromNodeId} -- "${edge.pieces}" --- ${toNodeId};\n`;
+          garbuixSyntax += `${fromNodeId} ->  ${toNodeId} ${edge.pieces} ; arrowhead=none\n`;
+        }
+      });
+    });
 
-window.somaAnalysis = {
-  allSolutions,
-  solutionGraphs,
-  graphClasses,
-  getGraphForSolution: (index) => solutionGraphs.get(allSolutions[index]),
-};
-console.log(
-  "Analysis data is available. Try `somaAnalysis.graphClasses` in the console.",
-);
+    const summaryP = metaGraphContainer.querySelector("p");
+    summaryP.textContent = `Found ${connectedComponents.length} connected component(s) and ${singletonClasses.length} isolated classes (singletons). An edge represents a 2-piece move.`;
+    console.log(garbuixSyntax);
+    metaGraphViz.textContent = mermaidMetaSyntax;
+    metaGraphViz.classList.add("mermaid");
+    metaGraphContainer.style.display = "block";
+
+    mermaid.run().then(() => {
+      const svgElement = metaGraphViz.querySelector("svg");
+      if (svgElement) {
+        svgPanZoom(svgElement, {
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+        });
+      }
+    });
+
+    computeMetaBtn.textContent = "Computation Complete";
+    window.somaAnalysis = {
+      allSolutions,
+      solutionGraphs,
+      graphClasses,
+      metaGraph,
+    };
+    console.log("All analysis data is available in `window.somaAnalysis`.");
+  }, 10);
+}
+
+// --- EVENT LISTENERS ---
+computeClassesBtn.addEventListener("click", computeAndRenderClasses);
+computeMetaBtn.addEventListener("click", computeAndRenderMetaGraph);
+
+mermaid.initialize({ startOnLoad: false, theme: "dark" });
