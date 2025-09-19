@@ -264,7 +264,7 @@ function computeAndRenderMetaGraph() {
         mermaidMetaSyntax += `        ${nodeId}("Class ${classNum + 1} (${numSols})");\n`;
         garbuixSyntax += `${nodeId} Class ${classNum + 1} (${numSols})\n`;
       });
-      mermaidMetaSyntax += "    end\n";
+      mermaidMetaSyntax += "    end\n\n";
       garbuixSyntax += `}\n`;
     });
 
@@ -278,7 +278,7 @@ function computeAndRenderMetaGraph() {
         mermaidMetaSyntax += `        ${nodeId}("Class ${classNum + 1} (${numSols})");\n`;
         garbuixSyntax += `${nodeId} Class ${classNum + 1} (${numSols})\n`;
       });
-      mermaidMetaSyntax += "    end\n";
+      mermaidMetaSyntax += "    end\n\n";
       garbuixSyntax += `}\n`;
     }
     // --- END MODIFICATION ---
@@ -289,7 +289,15 @@ function computeAndRenderMetaGraph() {
       edges.forEach((edge) => {
         const toNodeId = classLabelToNodeId.get(edge.to);
         if (fromNodeId < toNodeId) {
-          mermaidMetaSyntax += `    ${fromNodeId} -- "${edge.pieces}" --- ${toNodeId};\n`;
+          // Use a solid line for 2-piece moves and a dotted line for 3-piece moves
+         const isThreePieceMove = edge.pieces.split(',').length === 3;
+         let link;
+         if (isThreePieceMove) {
+           link = `-. "${edge.pieces}" .-`; // Dotted line
+         } else {
+           link = `-- "${edge.pieces}" ---`; // Solid line
+         }
+         mermaidMetaSyntax += `    ${fromNodeId} ${link} ${toNodeId};\n`;
           garbuixSyntax += `${fromNodeId} ->  ${toNodeId} ${edge.pieces} ; arrowhead=none\n`;
         }
       });
@@ -298,6 +306,7 @@ function computeAndRenderMetaGraph() {
     const summaryP = metaGraphContainer.querySelector("p");
     summaryP.textContent = `Found ${connectedComponents.length} connected component(s) and ${singletonClasses.length} isolated classes (singletons). An edge represents a 2-piece move.`;
     console.log(garbuixSyntax);
+    console.log(mermaidMetaSyntax)
     metaGraphViz.textContent = mermaidMetaSyntax;
     metaGraphViz.classList.add("mermaid");
     metaGraphContainer.style.display = "block";

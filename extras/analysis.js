@@ -167,7 +167,7 @@ export function generateMetaGraph(allSolutions, graphClasses, pieces) {
 
       // --- THE CRITICAL CHANGE IS HERE ---
       // An edge is a transition involving the minimum of 2 pieces.
-      if (changedPieces.length === 2) {
+      if (changedPieces.length === 2 || changedPieces.length === 3) {
         const movedPieces = changedPieces.sort(); // e.g., ['A', 'C']
         const class1 = signatureToClassMap.get(sig1);
         const class2 = signatureToClassMap.get(sig2);
