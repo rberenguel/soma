@@ -46,7 +46,7 @@ self.addEventListener("install", (event) => {
             throw error;
           }
         }
-        
+
         console.log("All files cached successfully.");
       } catch (error) {
         console.error("Service worker installation failed:", error);

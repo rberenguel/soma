@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Soma Cube Solution Analysis</title>
+    <script src="../libs/mermaid.js"></script>
+    <link href="../fonts/inter.css" rel="stylesheet" />
+    <link href="../fonts/monoid.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        font-family: "monoidregular";
+        background-color: #002b36; /* Solarized Base03 */
+        color: #839496; /* Solarized Base01 */
+        line-height: 1.6;
+      }
+      #container {
+        max-width: 960px;
+        margin: 2rem auto;
+        background: #001f27; /* Darker variant for container */
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #073642; /* Solarized Base02 */
+      }
+      h1,
+      h2 {
+        border-bottom: 1px solid #073642;
+        padding-bottom: 0.5rem;
+        color: #268bd2; /* Solarized Blue */
+      }
+      p,
+      li {
+        color: #93a1a1; /* Solarized Base1 */
+      }
+      code {
+        font-family: monospace;
+        background-color: #073642;
+        color: #b58900; /* Solarized Yellow */
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+      .solution {
+        margin-bottom: 2rem;
+        border: 1px solid #073642;
+        border-radius: 8px;
+        padding: 1.5rem;
+        background: #002b36;
+      }
+      pre {
+        background-color: #073642;
+        padding: 1rem;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #93a1a1;
+      }
+      .mermaid {
+        background-color: #002b36;
+        padding: 1rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+      }
+      .mermaid svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* NEW STYLES FOR EXPLANATION DROPDOWN */
+      details {
+        margin: 1rem 0;
+        background: #073642;
+        border-radius: 4px;
+        border: 1px solid #586e75;
+      }
+      summary {
+        padding: 1rem;
+        cursor: pointer;
+        font-weight: bold;
+        color: #2aa198; /* Solarized Cyan */
+      }
+      .explanation {
+        padding: 0 1rem 1rem 1rem;
+        border-top: 1px solid #586e75;
+      }
+      .explanation ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Soma Cube Solution Analysis</h1>
+      <p>
+        The solver finds all 240 unique solutions, which are then grouped into
+        unique structural classes based on their piece-adjacency graphs.
+      </p>
+
+      <details>
+        <summary>How are graph classes calculated?</summary>
+        <div class="explanation">
+          <p>
+            To find the unique structural class for each graph, we compute a
+            <strong>canonical label</strong>. This is a unique string that
+            represents the graph's structure, regardless of how its pieces
+            (vertices) are named.
+          </p>
+          <p>
+            Two solutions belong to the same class if their graphs are
+            <strong>isomorphic</strong>—meaning they are structurally identical.
+          </p>
+          <p>Our method is a brute-force approach suitable for small graphs:</p>
+          <ul>
+            <li>
+              We generate all 7! (5,040) possible permutations of the piece
+              labels ('A' through 'G').
+            </li>
+            <li>
+              For each permutation, we create a new, relabeled version of the
+              graph.
+            </li>
+            <li>
+              <strong
+                >We then convert this relabeled graph into a unique
+                string:</strong
+              >
+              <ul>
+                <li>
+                  First, the graph's nodes (pieces) are sorted alphabetically
+                  (A, B, C...).
+                </li>
+                <li>
+                  We iterate through the sorted nodes, building the string. For
+                  each node, we append its name, a colon, its
+                  alphabetically-sorted neighbors, and a semicolon.
+                </li>
+                <li>
+                  This creates a segment like <code>A:BCF;</code> for a single
+                  node. The final string is a concatenation of all segments,
+                  e.g., <code>A:BCF;B:ADG;...</code>.
+                </li>
+              </ul>
+            </li>
+            <li>
+              The lexicographically <strong>smallest</strong> string found
+              across all 5,040 permutations is chosen as the graph's official
+              canonical label.
+            </li>
+          </ul>
+          <p>
+            All isomorphic graphs will produce the exact same canonical label,
+            allowing us to group them together.
+          </p>
+        </div>
+      </details>
+
+      <div id="results"></div>
+    </div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../libs/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
