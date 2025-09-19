@@ -32,6 +32,7 @@
       li {
         color: #93a1a1; /* Solarized Base1 */
       }
+      /* General code style */
       code {
         font-family: monospace;
         background-color: #073642;
@@ -46,6 +47,7 @@
         padding: 1.5rem;
         background: #002b36;
       }
+      /* Style for the container of the signature list */
       pre {
         background-color: #073642;
         padding: 1rem;
@@ -53,6 +55,13 @@
         white-space: pre-wrap;
         word-break: break-all;
         color: #93a1a1;
+      }
+      /* --- THIS IS THE FIX --- */
+      /* Make the code block inside pre a block element */
+      pre > code {
+        display: block;
+        background-color: transparent; /* Inherit pre's background */
+        padding: 0; /* Reset padding, pre handles it */
       }
       .mermaid {
         background-color: #002b36;
@@ -66,7 +75,6 @@
         height: auto;
       }
 
-      /* NEW STYLES FOR EXPLANATION DROPDOWN */
       details {
         margin: 1rem 0;
         background: #073642;

@@ -34,7 +34,6 @@ allSolutions.forEach((sig) => {
   solutionGraphs.set(sig, graph);
 });
 
-// --- NEW: Group solutions by their canonical graph class ---
 console.log("Classifying graphs by isomorphism...");
 const graphClasses = new Map();
 solutionGraphs.forEach((graph, signature) => {
@@ -46,14 +45,18 @@ solutionGraphs.forEach((graph, signature) => {
 });
 console.log(`Found ${graphClasses.size} unique graph classes.`);
 
-// --- MODIFIED: Render results grouped by class ---
+// --- NEW: Create a map from signature to its original 1-based index ---
+const signatureToIndexMap = new Map();
+allSolutions.forEach((sig, index) => {
+  signatureToIndexMap.set(sig, index + 1);
+});
+
 const resultsContainer = document.getElementById("results");
 let classIndex = 1;
 graphClasses.forEach((signatures, label) => {
   const classEl = document.createElement("div");
-  classEl.className = "solution"; // Re-use the same style
+  classEl.className = "solution";
 
-  // Get a representative graph for this class
   const representativeSignature = signatures[0];
   const representativeGraph = solutionGraphs.get(representativeSignature);
 
@@ -69,18 +72,30 @@ graphClasses.forEach((signatures, label) => {
     });
   }
 
+  // --- MODIFIED: Rendering logic for signatures ---
+
+  // 1. Create the base HTML structure
   classEl.innerHTML = `
     <h2>Graph Class #${classIndex++} (${signatures.length} solutions)</h2>
     <div class="mermaid">${mermaidSyntax}</div>
     <p><strong>Signatures in this class:</strong></p>
-    <pre><code>${signatures.join("\n")}</code></pre>
-  `;
+    <pre><code></code></pre> 
+  `; // Note the empty <code> tag
+
+  // 2. Generate the text content with indices
+  const signaturesWithIndices = signatures
+    .map((sig) => `${signatureToIndexMap.get(sig)}: ${sig}`)
+    .join("\n");
+
+  // 3. Find the code block and set its textContent directly to fix spacing
+  const codeBlock = classEl.querySelector("code");
+  codeBlock.textContent = signaturesWithIndices;
+
   resultsContainer.appendChild(classEl);
 });
 
 mermaid.initialize({ startOnLoad: true, theme: "dark" });
 
-// --- UPDATED: Expose the new class data ---
 window.somaAnalysis = {
   allSolutions,
   solutionGraphs,

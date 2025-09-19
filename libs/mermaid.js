@@ -204013,13 +204013,11 @@ Licensed under The MIT License (http://opensource.org/licenses/MIT)
                     var za = x.findNearestElement(kr[0], kr[1], !0, !0),
                       Ac = x.findNearestElement(kr[2], kr[3], !0, !0);
                     za && za.isNode()
-                      ? (za
-                          .activate()
-                          .emit({
-                            originalEvent: G,
-                            type: "cxttapstart",
-                            position: { x: kr[0], y: kr[1] },
-                          }),
+                      ? (za.activate().emit({
+                          originalEvent: G,
+                          type: "cxttapstart",
+                          position: { x: kr[0], y: kr[1] },
+                        }),
                         (x.touchData.start = za))
                       : Ac && Ac.isNode()
                         ? (Ac.activate().emit({
