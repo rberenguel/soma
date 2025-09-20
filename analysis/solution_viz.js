@@ -24,7 +24,9 @@ async function renderGraph() {
     throw new Error("Graph data not found in sessionStorage.");
   }
   
-  const { nodes, links } = JSON.parse(storedData);
+  const { nodes, links: allLinks } = JSON.parse(storedData); // Rename links to allLinks
+  let currentLinks = [...allLinks]; // Start with all links
+  let showThreePieceMoves = true;
   
   const pieceColors = new Map([
     ['A', '#268bd2'], ['B', '#6c71c4'], ['C', '#b58900'],
@@ -39,9 +41,8 @@ async function renderGraph() {
 
   const nodeSize = 35;
 
-  // --- CUSTOM FORCE FOR ISOLATED NODES ---
   const connectedNodeIds = new Set();
-  links.forEach(l => {
+  allLinks.forEach(l => {
     const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
     const targetId = typeof l.target === 'object' ? l.target.id : l.target;
     connectedNodeIds.add(sourceId);
@@ -58,7 +59,7 @@ async function renderGraph() {
   }
 
   const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(150).strength(0.4))
+    .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(150).strength(0.4))
     .force("charge", d3.forceManyBody().strength(-80))
     .force("collide", d3.forceCollide().radius(nodeSize * 0.9))
     .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
@@ -67,40 +68,54 @@ async function renderGraph() {
   const tooltip = d3.select("body").append("div").attr("class", "tooltip");
   const totalEdgeWidth = 2;
 
-  const linkGroups = svg.append("g")
+  // --- REFACTORED: Link drawing logic ---
+  let linkGroups = svg.append("g")
     .attr("class", "links")
-    .selectAll("g")
-    .data(links)
-    .join("g")
-    .attr("class", d => `link-group move-${d.moveType}-piece`)
-    .on("mouseover", function(event, d) {
+    .selectAll("g");
+
+  function updateLinks() {
+    // Data join
+    linkGroups = linkGroups.data(currentLinks, d => `${d.source.id}-${d.target.id}`);
+
+    // Exit
+    linkGroups.exit().remove();
+
+    // Enter
+    const linkGroupsEnter = linkGroups.enter().append("g")
+      .attr("class", d => `link-group move-${d.moveType}-piece`);
+
+    linkGroupsEnter.each(function(d) {
+      const group = d3.select(this);
+      const strands = d.pieces.split(',');
+      const strandWidth = Math.max(0.5, totalEdgeWidth / strands.length);
+      group.append("line").attr("class", "hit-area").style("stroke", "transparent").style("stroke-width", 10);
+      strands.forEach(piece => {
+        group.append("line").attr("class", "strand").classed("three-piece", d.moveType === 3).style("stroke", pieceColors.get(piece)).style("stroke-width", strandWidth.toFixed(2)).style("stroke-opacity", 0.5);
+      });
+    });
+
+    // Merge
+    linkGroups = linkGroupsEnter.merge(linkGroups);
+
+    linkGroups.on("mouseover", function(event, d) {
       const group = d3.select(this);
       group.selectAll("line.strand").style("stroke-opacity", 1.0);
-      group.append("text").attr("class", "link-label").attr("x", (d.source.x + d.target.x) / 2).attr("y", (d.source.y + d.target.y) / 2).text(d.pieces.split(',').join(''));
-      
       const coloredPieces = d.pieces.split(',').map(p => `<span style="color: ${pieceColors.get(p)}; font-weight: bold;">${p}</span>`).join('');
       tooltip.html(`Move: ${coloredPieces}`)
         .style("left", (event.pageX + 5) + "px")
         .style("top", (event.pageY - 28) + "px");
       tooltip.transition().duration(200).style("opacity", .9);
-    })
-    .on("mouseout", function() {
+    }).on("mouseout", function() {
       const group = d3.select(this);
       group.selectAll("line.strand").style("stroke-opacity", 0.5);
-      group.select("text.link-label").remove();
       tooltip.transition().duration(500).style("opacity", 0);
     });
 
-  linkGroups.each(function(d) {
-    const group = d3.select(this);
-    const strands = d.pieces.split(',');
-    const strandWidth = Math.max(0.5, totalEdgeWidth / strands.length);
-
-    group.append("line").attr("class", "hit-area").style("stroke", "transparent").style("stroke-width", 10);
-    strands.forEach(piece => {
-      group.append("line").attr("class", "strand").classed("three-piece", d.moveType === 3).style("stroke", pieceColors.get(piece)).style("stroke-width", strandWidth.toFixed(2)).style("stroke-opacity", 0.5);
-    });
-  });
+    // Update simulation
+    simulation.force("link").links(currentLinks);
+    simulation.alpha(0.3).restart();
+  }
+  // --- END REFACTOR ---
 
   const viewerContainer = d3.select("#viewer-container");
   const viewerTitle = d3.select("#viewer-title");
@@ -197,41 +212,23 @@ async function renderGraph() {
   loadLocalInput.addEventListener('change', (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
-      console.log("No files selected.");
       return;
     }
-    console.log(`Processing ${files.length} files...`);
-
     const localImageMap = new Map();
     const fileNameRegex = /^(\d+)-/;
-
     for (const file of files) {
       const match = file.name.match(fileNameRegex);
       if (match && match[1]) {
         const canonicalId = parseInt(match[1], 10);
         const objectURL = URL.createObjectURL(file);
         localImageMap.set(canonicalId, objectURL);
-      } else {
-        console.warn(`Could not parse canonicalId from filename: "${file.name}"`);
       }
     }
-
-    let updatedCount = 0;
-    let nodesInspected = 0;
-
     node.each(function(d) {
-      if (nodesInspected < 5) {
-        console.log(`Inspecting node data: canonicalId is ${d.canonicalId} (type: ${typeof d.canonicalId})`);
-        nodesInspected++;
-      }
-
       if (localImageMap.has(d.canonicalId)) {
-        updatedCount++;
         const newUrl = localImageMap.get(d.canonicalId);
         const g = d3.select(this);
-        
         g.select('image').remove();
-        
         g.append("image")
           .attr("href", newUrl)
           .attr("width", nodeSize)
@@ -241,13 +238,22 @@ async function renderGraph() {
           .attr("onerror", "this.setAttribute('href', '../media/placeholder.png')");
       }
     });
-
-    console.log(`Attempted to update ${updatedCount} nodes with local solution images.`);
-    
     window.addEventListener('beforeunload', () => {
       localImageMap.forEach(url => URL.revokeObjectURL(url));
     });
   });
+
+  // --- NEW: Toggle Logic ---
+  const toggleBtn = document.getElementById('toggle-3-piece-btn');
+  toggleBtn.addEventListener('click', () => {
+    showThreePieceMoves = !showThreePieceMoves;
+    currentLinks = showThreePieceMoves ? [...allLinks] : allLinks.filter(l => l.moveType === 2);
+    updateLinks();
+    toggleBtn.style.backgroundColor = showThreePieceMoves ? '#073642' : '#586e75';
+  });
+  // --- END NEW ---
+
+  updateLinks(); // Initial draw
 }
 
 renderGraph();
