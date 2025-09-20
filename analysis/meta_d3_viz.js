@@ -78,7 +78,7 @@ metaGraph.forEach((edges, classLabel) => {
   });
 });
 
-const imagePaths = nodes.map((d) => `./images/class_${d.id}.svg`);
+const imagePaths = nodes.map((d) => `./images/classes/class_${d.id}.svg`);
 const classImageData = new Map();
 try {
   const svgPromises = imagePaths.map((path) =>

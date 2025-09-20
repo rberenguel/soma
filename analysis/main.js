@@ -139,11 +139,16 @@ function computeAndRenderClasses() {
   computeClassesBtn.disabled = true;
   computeClassesBtn.textContent = "Computing...";
   setTimeout(() => {
+    // Sort solutions to get a canonical order for IDs and consistent processing
+    const sortedSolutions = [...allSolutions].sort((a, b) =>
+      a.signature.localeCompare(b.signature)
+    );
+
     solutionGraphs = new Map();
-    allSolutions.forEach((solutionObject, index) => {
+    sortedSolutions.forEach((solutionObject) => {
       if (!solutionObject || typeof solutionObject.signature !== "string") {
         console.error(
-          `Problem at index ${index}: The solution object or its signature is invalid.`,
+          `Problem: The solution object or its signature is invalid.`, 
           solutionObject,
         );
         return;
@@ -160,7 +165,7 @@ function computeAndRenderClasses() {
     });
 
     const signatureToIndexMap = new Map();
-    allSolutions.forEach((solutionObject, index) => {
+    sortedSolutions.forEach((solutionObject, index) => {
       signatureToIndexMap.set(solutionObject.signature, index + 1);
     });
 
@@ -456,7 +461,8 @@ function computeAndRenderSolutionGraph() {
     // Create nodes with correct image paths based on the canonical (sorted) order
     const nodes = sortedSolutions.map((sol, i) => ({
       id: sol.signature,
-      imagePath: `images/sols/${i + 1}-${sol.signature}.png`,
+      canonicalId: i + 1,
+      imagePath: `images/solutions/${i + 1}-${sol.signature}.png`,
     }));
 
     const links = [];

@@ -49,8 +49,10 @@ export function reflectAndSwapGrid(grid, chiralSwapMap) {
 function signatureToGrid(signature, pieceIdMap) {
   const grid = createNewGrid();
   let i = 0;
-  for (let y = 0; y < 3; y++) {
-    for (let x = 0; x < 3; x++) {
+  // The signature is flattened in x, y, z order.
+  // We must reconstruct it in the same order.
+  for (let x = 0; x < 3; x++) {
+    for (let y = 0; y < 3; y++) {
       for (let z = 0; z < 3; z++) {
         const pieceChar = signature.charAt(i++);
         grid[x][y][z] = pieceIdMap.get(pieceChar) || null;

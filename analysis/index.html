@@ -167,6 +167,14 @@
         The solver finds all 240 unique solutions, which are then grouped into
         unique structural classes based on their piece-adjacency graphs.
       </p>
+      <p>
+        The meta-graph is a state graph of 2/3 piece moves that can transform <em>some</em> solution in the class to another solution in another class.
+        This graph is fully connected.
+      </p>
+      <p>
+        The full solution graph is also known as the <strong>SOMAP</strong> (see <a href="https://www-cs-faculty.stanford.edu/~knuth/somap-list.txt">Knuth</a>).
+        This will generate 
+      </p>
       <div id="controls">
         <button id="compute-classes-btn">Compute Graph Classes</button>
         <button id="compute-meta-btn" disabled>Compute Meta-Graph</button>

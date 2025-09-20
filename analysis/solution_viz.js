@@ -42,7 +42,6 @@ async function renderGraph() {
   // --- CUSTOM FORCE FOR ISOLATED NODES ---
   const connectedNodeIds = new Set();
   links.forEach(l => {
-    // d3 works with objects, but the initial data is just IDs
     const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
     const targetId = typeof l.target === 'object' ? l.target.id : l.target;
     connectedNodeIds.add(sourceId);
@@ -51,20 +50,19 @@ async function renderGraph() {
   const isolatedNodes = nodes.filter(n => !connectedNodeIds.has(n.id));
   
   function isolatedNodeGravity(alpha) {
-    const gravity = 0.05 * alpha; // A gentle pull
+    const gravity = 0.05 * alpha;
     isolatedNodes.forEach(node => {
       node.vx += (width / 2 - node.x) * gravity;
       node.vy += (height / 2 - node.y) * gravity;
     });
   }
-  // --- END CUSTOM FORCE ---
 
   const simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(150).strength(0.4))
     .force("charge", d3.forceManyBody().strength(-80))
     .force("collide", d3.forceCollide().radius(nodeSize * 0.9))
     .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
-    .force("isolatedGravity", isolatedNodeGravity); // Add the custom force
+    .force("isolatedGravity", isolatedNodeGravity);
 
   const tooltip = d3.select("body").append("div").attr("class", "tooltip");
   const totalEdgeWidth = 2;
@@ -79,7 +77,12 @@ async function renderGraph() {
       const group = d3.select(this);
       group.selectAll("line.strand").style("stroke-opacity", 1.0);
       group.append("text").attr("class", "link-label").attr("x", (d.source.x + d.target.x) / 2).attr("y", (d.source.y + d.target.y) / 2).text(d.pieces.split(',').join(''));
-      tooltip.transition().duration(200).style("opacity", .9).html(`Move: ${d.pieces}`).style("left", (event.pageX + 5) + "px").style("top", (event.pageY - 28) + "px");
+      
+      const coloredPieces = d.pieces.split(',').map(p => `<span style="color: ${pieceColors.get(p)}; font-weight: bold;">${p}</span>`).join('');
+      tooltip.html(`Move: ${coloredPieces}`)
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
+      tooltip.transition().duration(200).style("opacity", .9);
     })
     .on("mouseout", function() {
       const group = d3.select(this);
@@ -99,8 +102,31 @@ async function renderGraph() {
     });
   });
 
+  const viewerContainer = d3.select("#viewer-container");
+  const viewerTitle = d3.select("#viewer-title");
+  const viewerImage = d3.select("#viewer-image");
+
   const node = svg.append("g").selectAll("g").data(nodes).join("g").attr("class", "node")
-    .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+    .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      viewerTitle.text(`Solution #${d.canonicalId}`);
+      viewerImage.attr("src", d3.select(event.currentTarget).select('image').attr('href'));
+      viewerContainer.style("display", "flex");
+    })
+    .on("mouseover", (event, d) => {
+      tooltip.html(`Solution #${d.canonicalId}`)
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
+      tooltip.transition().duration(200).style("opacity", .9);
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(500).style("opacity", 0);
+    });
+  
+  svg.on("click", () => {
+    viewerContainer.style("display", "none");
+  });
 
   node.append("image")
     .attr("href", d => d.imagePath)
@@ -159,6 +185,68 @@ async function renderGraph() {
   
   downloadBtn.addEventListener('click', () => {
     saveSvg(svg.node(), 'soma-solution-graph.svg');
+  });
+
+  const loadLocalTriggerBtn = document.getElementById('load-local-trigger-btn');
+  const loadLocalInput = document.getElementById('load-local-input');
+
+  loadLocalTriggerBtn.addEventListener('click', () => {
+    loadLocalInput.click();
+  });
+
+  loadLocalInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+      console.log("No files selected.");
+      return;
+    }
+    console.log(`Processing ${files.length} files...`);
+
+    const localImageMap = new Map();
+    const fileNameRegex = /^(\d+)-/;
+
+    for (const file of files) {
+      const match = file.name.match(fileNameRegex);
+      if (match && match[1]) {
+        const canonicalId = parseInt(match[1], 10);
+        const objectURL = URL.createObjectURL(file);
+        localImageMap.set(canonicalId, objectURL);
+      } else {
+        console.warn(`Could not parse canonicalId from filename: "${file.name}"`);
+      }
+    }
+
+    let updatedCount = 0;
+    let nodesInspected = 0;
+
+    node.each(function(d) {
+      if (nodesInspected < 5) {
+        console.log(`Inspecting node data: canonicalId is ${d.canonicalId} (type: ${typeof d.canonicalId})`);
+        nodesInspected++;
+      }
+
+      if (localImageMap.has(d.canonicalId)) {
+        updatedCount++;
+        const newUrl = localImageMap.get(d.canonicalId);
+        const g = d3.select(this);
+        
+        g.select('image').remove();
+        
+        g.append("image")
+          .attr("href", newUrl)
+          .attr("width", nodeSize)
+          .attr("height", nodeSize)
+          .attr("x", -nodeSize / 2)
+          .attr("y", -nodeSize / 2)
+          .attr("onerror", "this.setAttribute('href', '../media/placeholder.png')");
+      }
+    });
+
+    console.log(`Attempted to update ${updatedCount} nodes with local solution images.`);
+    
+    window.addEventListener('beforeunload', () => {
+      localImageMap.forEach(url => URL.revokeObjectURL(url));
+    });
   });
 }
 
