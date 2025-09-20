@@ -178,45 +178,55 @@
       <h1>Soma Cube Solution Analysis</h1>
       <h4 class="subtitle">Ruben Berenguel, 2025</h4>
       <p>
-        The same solver used in the simulator to assign a unique identifier to
-        solutions, finds all 240 unique solutions, which are then grouped into
-        unique structural classes based on their piece-adjacency graphs. You can
-        find more details in the summary box below. You need to run this first,
-        since it generates data structures needed for the other two.
+        This tool analyzes the 240 unique solutions to the Soma Cube by grouping
+        them into structural classes and mapping the relationships between them.
+        The process is broken down into three main steps, each with its own
+        interactive visualization.
       </p>
+
       <hr />
+
+      <h2>How It Works</h2>
+
+      <h4>Step 1: Compute Graph Classes</h4>
       <p>
-        The meta-graph is a state graph of 2 or 3 piece moves that can transform
-        <em>some</em> solution in the class to another solution in another
-        class. This graph is fully connected, and will open in its own tab,
-        since it is pretty large. The node SVG images are those generated in the
-        previous step, and downloaded.
+        First, the tool identifies all 240 solutions and groups them into unique
+        structural classes based on their piece-adjacency graphs. This initial
+        step is required as it generates the data needed for the other
+        visualizations. For a detailed explanation of how these classes are
+        calculated, see the expandable section below the controls.
       </p>
-      <hr />
+
+      <h4>Step 2: Compute Meta-Graph</h4>
       <p>
-        The full solution graph is also known as the <strong>SOMAP</strong> (see
+        This visualization generates a "meta-graph" showing how the solution
+        <em>classes</em> are interconnected. An edge between two classes means
+        you can transform a solution from one class into a solution from the
+        other through a simple 2- or 3-piece move.
+      </p>
+
+      <h4>Step 3: Compute Full Solution Graph</h4>
+      <p>
+        This generates the full solution graph, also known as the
+        <strong>SOMAP</strong> (Soma Map), explored before by Richard Guy, John
+        H. Conway, and
         <a href="https://www-cs-faculty.stanford.edu/~knuth/somap-list.txt"
-          >Knuth</a
-        >). This will generate the full connection graph of canonical solutions,
-        and how to move across them with changes of 2 or 3 piece moves. It will
-        open in its own tab.
+          >Donald Knuth</a
+        >. Initially, the graph displays placeholders for all 240 canonical
+        solutions.
       </p>
 
       <p>
-        It will show <em>no</em> solutions, but just placeholders. If you find
-        solutions using my
+        As you find solutions using my
         <a href="https://www.mostlymaths.net/soma">Soma cube simulator</a>, you
-        can load them and they will show in the graph. Then you can use the
-        graph to guide you in finding the missing solutions.
+        can load them here, and they will populate the graph. This allows you to
+        see which solutions you've found and use the graph's connections to
+        guide you toward discovering the remaining ones. You can toggle between
+        viewing connections made by 2-piece moves only, or by both 2- and
+        3-piece moves. If you're interested, you can see a rendering of Knuth's
+        original SOMAP-3 graph <a href="./knuth.html">here</a>.
       </p>
-      <p>
-        You can optionally disable the 3-piece option to see only 2 piece
-        changes. The 2/3 version (sometimes referenced as SOMAP-3) has two
-        connected components: one with 239 solutions, and one with one solution.
-        The 2 version (SOMAP-2) is disconnected, and has several singletons. If
-        you are curious to see Knuths's SOMAP-3 graph, I added a renderer for it
-        <a href="./knuth.html">here</a>.
-      </p>
+
       <hr />
       <div id="controls">
         <button id="compute-classes-btn">Compute Graph Classes</button>
