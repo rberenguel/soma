@@ -1,5 +1,7 @@
 // analysis_driver.js
 import { initializeSolver } from "../js/solver.js";
+import { rotateGrid, reflectAndSwapGrid } from "./analysis.js";
+import { createNewGrid } from "../js/grid.js";
 import * as gridHelpers from "../js/grid.js";
 import { pieceDefs } from "../js/config.js";
 import {
@@ -56,6 +58,7 @@ let graphClasses = null;
 // --- BUTTONS AND CONTAINERS ---
 const computeClassesBtn = document.getElementById("compute-classes-btn");
 const computeMetaBtn = document.getElementById("compute-meta-btn");
+const computeSolutionGraphBtn = document.getElementById("compute-solution-graph-btn"); // Add this
 const resultsContainer = document.getElementById("results-container");
 const metaGraphContainer = document.getElementById("meta-graph-container");
 
@@ -257,6 +260,7 @@ function computeAndRenderClasses() {
 
     computeClassesBtn.textContent = "Computation Complete";
     computeMetaBtn.disabled = false;
+    computeSolutionGraphBtn.disabled = false;
     mermaid.run();
   }, 10);
 }
@@ -435,7 +439,20 @@ function computeAndRenderMetaGraph() {
   }, 10);
 }
 
+// main.js
+
+// main.js
+
+function computeAndRenderSolutionGraph() {
+  computeSolutionGraphBtn.disabled = true;
+  computeSolutionGraphBtn.textContent = "Analysing…";
+
+  setTimeout(() => {
+  }, 10);
+}
+
 // --- EVENT LISTENERS ---
+computeSolutionGraphBtn.addEventListener("click", computeAndRenderSolutionGraph);
 computeClassesBtn.addEventListener("click", computeAndRenderClasses);
 computeMetaBtn.addEventListener("click", computeAndRenderMetaGraph);
 

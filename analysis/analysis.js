@@ -5,7 +5,7 @@ import { createNewGrid } from "../js/grid.js";
 // --- HELPER FUNCTIONS FOR GRID MANIPULATION ---
 // (These are needed to check all symmetric orientations)
 
-function rotateGrid(grid, axis) {
+export function rotateGrid(grid, axis) {
   const newGrid = createNewGrid();
   const N = 3;
   for (let x = 0; x < N; x++) {
@@ -26,7 +26,7 @@ function rotateGrid(grid, axis) {
   return newGrid;
 }
 
-function reflectAndSwapGrid(grid, chiralSwapMap) {
+export function reflectAndSwapGrid(grid, chiralSwapMap) {
   const newGrid = createNewGrid();
   const N = 3;
   for (let x = 0; x < N; x++) {

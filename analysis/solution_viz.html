@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Soma Cube | Full Solution Graph</title>
+    <script src="./libs/d3v6.js"></script>
+    <style>
+      /* All the CSS from meta_viz.html can be copied here directly */
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #002b36; font-family: "monoidregular", monospace; }
+      svg { width: 100%; height: 100%; }
+      .node circle { stroke: #93a1a1; stroke-width: 1.5px; }
+      .node text { fill: #93a1a1; font-size: 10px; pointer-events: none; }
+      .strand { stroke-opacity: 0.5; pointer-events: none; }
+      .strand.three-piece { stroke-dasharray: 4, 4; }
+      .link-group { cursor: help; }
+      .link-label { font-size: 12px; font-weight: bold; fill: #fdf6e3; stroke: #002b36; stroke-width: 3px; paint-order: stroke; text-anchor: middle; alignment-baseline: middle; pointer-events: none; opacity: 1; }
+      .tooltip { position: absolute; text-align: center; width: auto; padding: 8px; font: 12px sans-serif; background: #073642; border: 1px solid #93a1a1; border-radius: 8px; pointer-events: none; color: #93a1a1; opacity: 0; }
+      .controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 10px; }
+      .controls button { font-family: "monoidregular", monospace; background-color: #073642; color: #93a1a1; border: 1px solid #586e75; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+      .controls button:disabled { cursor: not-allowed; opacity: 0.5; }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <button id="lock-btn">Lock Positions 🔒</button>
+      <button id="download-btn" disabled>Download SVG</button>
+    </div>
+    <script type="module" src="solution_viz.js"></script>
+  </body>
+</html>
