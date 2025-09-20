@@ -104,7 +104,9 @@ export function initializeSolver(pieceDefs, pieces, helpers) {
             }
           }
       const signature = getCanonicalSignature(tempGrid);
-      solutions.add(signature);
+      if (!solutions.has(signature)) {
+        solutions.set(signature, tempGrid);
+      }
       return;
     }
 
@@ -152,11 +154,15 @@ export function initializeSolver(pieceDefs, pieces, helpers) {
         .fill(0)
         .map(() => Array(3).fill(0)),
     );
-  const foundSolutions = new Set();
+  const foundSolutions = new Map(); // Use a Map instead of a Set
 
   solve(initialGrid, piecesToPlace, foundSolutions);
 
-  const allSols = Array.from(foundSolutions).sort();
+  const allSols = Array.from(foundSolutions.entries()).map(([sig, grid]) => ({
+    signature: sig,
+    grid: grid,
+  }));
   console.log(`Solver finished. Found ${allSols.length} unique solutions.`);
+  console.log(allSols);
   return allSols;
 }

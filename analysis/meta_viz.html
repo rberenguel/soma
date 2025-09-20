@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Soma Cube | Meta-Graph Visualization</title>
+    <script src="./libs/d3v6.js"></script>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #002b36;
+        font-family: "monoidregular", monospace;
+      }
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+      .node circle {
+        stroke: #93a1a1;
+        stroke-width: 1.5px;
+      }
+      .node text {
+        fill: #93a1a1;
+        font-size: 10px;
+        pointer-events: none; /* Make text non-interactive */
+      }
+      .link {
+        stroke: #586e75; /* Solarized Base01 */
+        stroke-opacity: 0.6;
+      }
+      .link.three-piece {
+        stroke-dasharray: 5, 5;
+      }
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        width: auto;
+        padding: 8px;
+        font: 12px sans-serif;
+        background: #073642; /* Solarized Base02 */
+        border: 1px solid #93a1a1;
+        border-radius: 8px;
+        pointer-events: none;
+        color: #93a1a1;
+        opacity: 0;
+      }
+      .strand {
+        stroke-opacity: 0.7;
+        pointer-events: none; /* Make strands non-interactive for tooltips */
+      }
+      .strand.three-piece {
+        stroke-dasharray: 5, 5;
+      }
+      .link-group {
+        cursor: help; /* Change cursor on hover to indicate info is available */
+      }
+      .link-label {
+        font-size: 12px;
+        font-weight: bold;
+        fill: #fdf6e3; /* A bright, light color (Solarized Base3) */
+        stroke: #002b36; /* A dark outline matching the background */
+        stroke-width: 3px;
+        paint-order: stroke; /* This makes the fill render on top of the stroke */
+        text-anchor: middle;
+        alignment-baseline: middle;
+        pointer-events: none; /* The label itself shouldn't capture mouse events */
+        opacity: 0; /* Hidden by default */
+        /*transition: opacity 0.2s ease-in-out; /* Smooth fade effect */
+      }
+      .controls {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        display: flex;
+        gap: 10px;
+      }
+      .controls button {
+        font-family: "monoidregular", monospace;
+        background-color: #073642;
+        color: #93a1a1;
+        border: 1px solid #586e75;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .controls button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <button id="lock-btn">Lock Positions 🔒</button>
+      <button id="download-btn" disabled>Download SVG</button>
+    </div>
+    <script type="module" src="meta_d3_viz.js"></script>
+  </body>
+</html>
