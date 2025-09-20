@@ -37,14 +37,37 @@ async function renderGraph() {
   let isLocked = false;
   const svg = d3.select("body").append("svg").attr("viewBox", [0, 0, width, height]);
 
+  const nodeSize = 35;
+
+  // --- CUSTOM FORCE FOR ISOLATED NODES ---
+  const connectedNodeIds = new Set();
+  links.forEach(l => {
+    // d3 works with objects, but the initial data is just IDs
+    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+    connectedNodeIds.add(sourceId);
+    connectedNodeIds.add(targetId);
+  });
+  const isolatedNodes = nodes.filter(n => !connectedNodeIds.has(n.id));
+  
+  function isolatedNodeGravity(alpha) {
+    const gravity = 0.05 * alpha; // A gentle pull
+    isolatedNodes.forEach(node => {
+      node.vx += (width / 2 - node.x) * gravity;
+      node.vy += (height / 2 - node.y) * gravity;
+    });
+  }
+  // --- END CUSTOM FORCE ---
+
   const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(60).strength(0.6))
-    .force("charge", d3.forceManyBody().strength(-25))
-    .force("center", d3.forceCenter(width / 2, height / 2));
+    .force("link", d3.forceLink(links).id(d => d.id).distance(150).strength(0.4))
+    .force("charge", d3.forceManyBody().strength(-80))
+    .force("collide", d3.forceCollide().radius(nodeSize * 0.9))
+    .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+    .force("isolatedGravity", isolatedNodeGravity); // Add the custom force
 
   const tooltip = d3.select("body").append("div").attr("class", "tooltip");
   const totalEdgeWidth = 2;
-  const nodeSize = 25;
 
   const linkGroups = svg.append("g")
     .attr("class", "links")
@@ -82,7 +105,8 @@ async function renderGraph() {
   node.append("image")
     .attr("href", d => d.imagePath)
     .attr("width", nodeSize).attr("height", nodeSize)
-    .attr("x", -nodeSize / 2).attr("y", -nodeSize / 2);
+    .attr("x", -nodeSize / 2).attr("y", -nodeSize / 2)
+    .attr("onerror", "this.setAttribute('href', '../media/placeholder.png')");
 
   simulation.on("tick", () => {
     linkGroups.each(function(d) {

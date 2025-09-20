@@ -439,15 +439,142 @@ function computeAndRenderMetaGraph() {
   }, 10);
 }
 
-// main.js
-
-// main.js
-
 function computeAndRenderSolutionGraph() {
   computeSolutionGraphBtn.disabled = true;
   computeSolutionGraphBtn.textContent = "Analysing…";
 
   setTimeout(() => {
+    console.log("Generating full solution graph...");
+
+    // Sort solutions to get a canonical order for IDs and consistent processing
+    const sortedSolutions = [...allSolutions].sort((a, b) =>
+      a.signature.localeCompare(b.signature),
+    );
+
+    const pieceNameMap = new Map(pieces.map((p) => [p, p.name]));
+
+    // Create nodes with correct image paths based on the canonical (sorted) order
+    const nodes = sortedSolutions.map((sol, i) => ({
+      id: sol.signature,
+      imagePath: `images/sols/${i + 1}-${sol.signature}.png`,
+    }));
+
+    const links = [];
+    const adjacency = new Map(nodes.map((n) => [n.id, 0]));
+
+    for (let i = 0; i < sortedSolutions.length; i++) {
+      for (let j = i + 1; j < sortedSolutions.length; j++) {
+        const sol1 = sortedSolutions[i];
+        const sol2 = sortedSolutions[j];
+
+        let transformationFound = false;
+
+        const gridsToTest = [
+          sol2.grid,
+          reflectAndSwapGrid(sol2.grid, chiralSwapMap),
+        ];
+        const faceOrienters = [
+          (g) => g,
+          (g) => rotateGrid(g, "x"),
+          (g) => rotateGrid(rotateGrid(g, "x"), "x"),
+          (g) => rotateGrid(rotateGrid(rotateGrid(g, "x"), "x"), "x"),
+          (g) => rotateGrid(g, "z"),
+          (g) => rotateGrid(rotateGrid(rotateGrid(g, "z"), "z"), "z"),
+        ];
+
+        for (const initialGrid of gridsToTest) {
+          if (transformationFound) break;
+          for (const orient of faceOrienters) {
+            if (transformationFound) break;
+            let currentGrid = orient(initialGrid);
+            for (let k = 0; k < 4; k++) {
+              currentGrid = rotateGrid(currentGrid, "y");
+
+              const movedPieces = new Set();
+              for (let x = 0; x < 3; x++) {
+                for (let y = 0; y < 3; y++) {
+                  for (let z = 0; z < 3; z++) {
+                    const piece1 = sol1.grid[x][y][z];
+                    const piece2 = currentGrid[x][y][z];
+                    if (piece1 !== piece2) {
+                      if (piece1) movedPieces.add(pieceNameMap.get(piece1));
+                      if (piece2) movedPieces.add(pieceNameMap.get(piece2));
+                    }
+                  }
+                }
+              }
+
+              if (movedPieces.size === 2 || movedPieces.size === 3) {
+                const edgeLabel = Array.from(movedPieces).sort().join(",");
+                links.push({
+                  source: sol1.signature,
+                  target: sol2.signature,
+                  pieces: edgeLabel,
+                  moveType: movedPieces.size,
+                });
+                adjacency.set(sol1.signature, adjacency.get(sol1.signature) + 1);
+                adjacency.set(sol2.signature, adjacency.get(sol2.signature) + 1);
+                transformationFound = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log(
+      `Full solution graph generation complete. Found ${nodes.length} nodes and ${links.length} links.`,
+    );
+
+    // Verification step for disconnected nodes
+    const disconnectedNodes = [];
+    adjacency.forEach((degree, signature) => {
+      if (degree === 0) {
+        const solIndex = sortedSolutions.findIndex(
+          (s) => s.signature === signature,
+        );
+        disconnectedNodes.push({ signature, id: solIndex + 1 });
+      }
+    });
+
+    if (disconnectedNodes.length > 0) {
+      console.warn(
+        "WARNING: The following solutions are disconnected from the graph:",
+      );
+      disconnectedNodes.forEach((node) => {
+        console.warn(
+          `  - Canonical ID: ${node.id}, Signature: ${node.signature}`,
+        );
+      });
+    } else {
+      console.log(
+        "Graph connectivity check passed. All nodes have at least one edge.",
+      );
+    }
+
+    const dataToStore = { nodes, links };
+
+    try {
+      sessionStorage.setItem(
+        "somaSolutionGraphData",
+        JSON.stringify(dataToStore),
+      );
+      console.log(
+        "Solution graph data saved to sessionStorage. Opening visualization tab...",
+      );
+      window.open("solution_viz.html", "_blank");
+    } catch (e) {
+      console.error(
+        "Failed to store data in sessionStorage. It might be too large or disabled.",
+        e,
+      );
+      alert(
+        "Could not open visualization. Data is too large for sessionStorage.",
+      );
+    }
+
+    computeSolutionGraphBtn.textContent = "Computation Complete";
   }, 10);
 }
 
