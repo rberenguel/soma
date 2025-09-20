@@ -1,274 +1,423 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>D3-based Knuth SOMAP Visualizer</title>
-  <script src="libs/d3v6.js"></script>
-  <style>
-    body, html {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      overflow: hidden;
-      background-color: #002b36;
-      font-family: monospace, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #93a1a1;
-    }
-    svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-    .header {
-      position: relative;
-      padding: 1rem;
-      background-color: rgba(0, 43, 54, 0.9);
-      z-index: 10;
-      border-bottom: 1px solid #073642;
-    }
-    .header h1, .header p { margin: 0; padding: 0; }
-    .header h1 { color: #268bd2; margin-bottom: 0.5rem; }
-    .controls {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      display: flex;
-      gap: 10px;
-      z-index: 10;
-    }
-    .controls button, input[type="file"] {
-      font-family: monospace, sans-serif;
-      background-color: #073642;
-      color: #93a1a1;
-      border: 1px solid #586e75;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .controls button:disabled { cursor: not-allowed; opacity: 0.5; }
+  <head>
+    <meta charset="UTF-8" />
+    <title>D3-based Knuth SOMAP Visualizer</title>
+    <link rel="icon" href="../media/favicon.ico" type="image/x-icon" />
+    <script src="libs/d3v6.js"></script>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #002b36;
+        font-family:
+          monospace,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        color: #93a1a1;
+      }
+      svg {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+      .header {
+        position: relative;
+        padding: 1rem;
+        background-color: rgba(0, 43, 54, 0.9);
+        z-index: 10;
+        border-bottom: 1px solid #073642;
+      }
+      .header h1,
+      .header p {
+        margin: 0;
+        padding: 0;
+      }
+      .header h1 {
+        color: #268bd2;
+        margin-bottom: 0.5rem;
+      }
+      .controls {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+      }
+      .controls button,
+      input[type="file"] {
+        font-family: monospace, sans-serif;
+        background-color: #073642;
+        color: #93a1a1;
+        border: 1px solid #586e75;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .controls button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
 
-    .node circle { stroke: #93a1a1; stroke-width: 1.5px; fill: #073642; }
-    .node text { fill: #93a1a1; font-size: 10px; pointer-events: none; }
-    .strand { stroke-opacity: 0.5; pointer-events: none; }
-    .strand.three-piece { stroke-dasharray: 4, 4; }
-    .link-group { cursor: help; }
-    .link-label {
-        font-size: 12px; font-weight: bold; fill: #fdf6e3;
-        stroke: #002b36; stroke-width: 3px; paint-order: stroke;
-        text-anchor: middle; alignment-baseline: middle;
-        pointer-events: none; opacity: 1;
-    }
-    .tooltip {
-        position: absolute; text-align: center; width: auto;
-        padding: 8px; font: 12px sans-serif; background: #073642;
-        border: 1px solid #93a1a1; border-radius: 8px;
-        pointer-events: none; color: #93a1a1; opacity: 0;
+      .node circle {
+        stroke: #93a1a1;
+        stroke-width: 1.5px;
+        fill: #073642;
+      }
+      .node text {
+        fill: #93a1a1;
+        font-size: 10px;
+        pointer-events: none;
+      }
+      .strand {
+        stroke-opacity: 0.5;
+        pointer-events: none;
+      }
+      .strand.three-piece {
+        stroke-dasharray: 4, 4;
+      }
+      .link-group {
+        cursor: help;
+      }
+      .link-label {
+        font-size: 12px;
+        font-weight: bold;
+        fill: #fdf6e3;
+        stroke: #002b36;
+        stroke-width: 3px;
+        paint-order: stroke;
+        text-anchor: middle;
+        alignment-baseline: middle;
+        pointer-events: none;
+        opacity: 1;
+      }
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        width: auto;
+        padding: 8px;
+        font: 12px sans-serif;
+        background: #073642;
+        border: 1px solid #93a1a1;
+        border-radius: 8px;
+        pointer-events: none;
+        color: #93a1a1;
+        opacity: 0;
         z-index: 20;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <h1>Metagraph Visualizer</h1>
-    <p>Select a local file with the Knuth-style graph definition to render it.</p>
-    <input type="file" id="file-input" />
-  </div>
-
-  <div class="controls">
-    <button id="lock-btn">Lock Positions 🔒</button>
-    <button id="download-btn" disabled>Download SVG</button>
-  </div>
-
-  <script>
-    function parseKnuthFormat(textContent) {
-      const lines = textContent.split('\n');
-      const nodes = new Map();
-      const edges = [];
-      let currentNodeId = null;
-      const nodeRegex = /^#(\d+)\s+([A-Z0-9a-z]+)/;
-      const edgeRegex = /->\s+#(\d+).*?(delta.*)/;
-
-      for (const line of lines) {
-        const nodeMatch = line.match(nodeRegex);
-        if (nodeMatch) {
-          const [_, id, code] = nodeMatch;
-          currentNodeId = id;
-          nodes.set(id, `${id} ${code}`);
-          continue;
-        }
-
-        const edgeMatch = line.match(edgeRegex);
-        if (edgeMatch && currentNodeId) {
-          const [_, targetId, label] = edgeMatch;
-          edges.push({ from: currentNodeId, to: targetId, label: label.trim() });
-        }
       }
-      return { nodes, edges };
-    }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>D3-based Knuth SOMAP Visualizer</h1>
+      <p>Loading Knuth-style graph definition from somap-3.gb...</p>
+    </div>
 
-    function transformToD3(knuthData) {
-      const nodes = Array.from(knuthData.nodes.keys(), id => ({ id, label: knuthData.nodes.get(id) }));
-      const links = knuthData.edges.map(edge => {
-        const piecesMatch = edge.label.match(/\(([^)]+)\)/);
-        const pieces = piecesMatch ? piecesMatch[1] : '';
-        return {
-          source: edge.from,
-          target: edge.to,
-          pieces: pieces,
-          moveType: pieces ? pieces.split(',').length : 0
-        };
-      });
-      return { nodes, links };
-    }
+    <div class="controls">
+      <button id="lock-btn">Lock Positions 🔒</button>
+      <button id="download-btn" disabled>Download SVG</button>
+    </div>
 
-    function saveSvg(svgElement, filename) {
-      const serializer = new XMLSerializer();
-      let source = serializer.serializeToString(svgElement);
-      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-      const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-    
-    function renderD3Graph({ nodes, links }) {
-      d3.select("svg").remove();
-      d3.select(".tooltip").remove();
-      
-      const pieceColors = new Map([
-        ['A', '#268bd2'], ['B', '#6c71c4'], ['C', '#b58900'],
-        ['D', '#859900'], ['E', '#dc322f'], ['F', '#d33682'],
-        ['G', '#cb4b16']
-      ]);
+    <script>
+      function parseKnuthFormat(textContent) {
+        const lines = textContent.split("\n");
+        const nodes = new Map();
+        const edges = [];
+        let currentNodeId = null;
+        const nodeRegex = /^#(\d+)\s+([A-Z0-9a-z]+)/;
+        const edgeRegex = /->\s+#(\d+).*?(delta.*)/;
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      let isLocked = false;
-      const svg = d3.select("body").append("svg").attr("viewBox", [0, 0, width, height]);
-      const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-      const totalEdgeWidth = 2;
-
-      const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(550).strength(1.9))
-        .force("charge", d3.forceManyBody().strength(-2))
-        .force("center", d3.forceCenter(width / 2, height / 2));
-
-      const linkGroups = svg.append("g").selectAll("g")
-        .data(links).join("g")
-        .attr("class", d => `link-group move-${d.moveType}-piece`)
-        .on("mouseover", function(event, d) {
-          const group = d3.select(this);
-          group.selectAll("line.strand").style("stroke-opacity", 1.0);
-          if (d.pieces) {
-            group.append("text").attr("class", "link-label")
-              .attr("x", (d.source.x + d.target.x) / 2)
-              .attr("y", (d.source.y + d.target.y) / 2)
-              .text(d.pieces.split(',').join(''));
+        for (const line of lines) {
+          const nodeMatch = line.match(nodeRegex);
+          if (nodeMatch) {
+            const [_, id, code] = nodeMatch;
+            currentNodeId = id;
+            nodes.set(id, `${id} ${code}`);
+            continue;
           }
-          tooltip.transition().duration(200).style("opacity", .9)
-            .html(`Move: ${d.pieces || 'N/A'}`)
-            .style("left", (event.pageX + 5) + "px")
-            .style("top", (event.pageY - 28) + "px");
-        })
-        .on("mouseout", function() {
-          const group = d3.select(this);
-          group.selectAll("line.strand").style("stroke-opacity", 0.5);
-          group.select("text.link-label").remove();
-          tooltip.transition().duration(500).style("opacity", 0);
-        });
 
-      linkGroups.each(function(d) {
-        const group = d3.select(this);
-        const strands = d.pieces ? d.pieces.split(',') : [];
-        const strandWidth = strands.length > 0 ? Math.max(0.5, totalEdgeWidth / strands.length) : totalEdgeWidth;
-        group.append("line").attr("class", "hit-area").style("stroke", "transparent").style("stroke-width", 10);
-        
-        if (strands.length > 0) {
-            strands.forEach(piece => {
-              group.append("line").attr("class", "strand")
+          const edgeMatch = line.match(edgeRegex);
+          if (edgeMatch && currentNodeId) {
+            const [_, targetId, label] = edgeMatch;
+            edges.push({
+              from: currentNodeId,
+              to: targetId,
+              label: label.trim(),
+            });
+          }
+        }
+        return { nodes, edges };
+      }
+
+      function transformToD3(knuthData) {
+        const nodes = Array.from(knuthData.nodes.keys(), (id) => ({
+          id,
+          label: knuthData.nodes.get(id),
+        }));
+        const links = knuthData.edges.map((edge) => {
+          const piecesMatch = edge.label.match(/\(([^)]+)\)/);
+          const pieces = piecesMatch ? piecesMatch[1] : "";
+          return {
+            source: edge.from,
+            target: edge.to,
+            pieces: pieces,
+            moveType: pieces ? pieces.split(",").length : 0,
+          };
+        });
+        return { nodes, links };
+      }
+
+      function saveSvg(svgElement, filename) {
+        const serializer = new XMLSerializer();
+        let source = serializer.serializeToString(svgElement);
+        if (
+          !source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)
+        ) {
+          source = source.replace(
+            /^<svg/,
+            '<svg xmlns="http://www.w3.org/2000/svg"',
+          );
+        }
+        const blob = new Blob([source], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      function renderD3Graph({ nodes, links }) {
+        d3.select("svg").remove();
+        d3.select(".tooltip").remove();
+
+        const pieceColors = new Map([
+          ["A", "#268bd2"],
+          ["B", "#6c71c4"],
+          ["C", "#b58900"],
+          ["D", "#859900"],
+          ["E", "#dc322f"],
+          ["F", "#d33682"],
+          ["G", "#cb4b16"],
+        ]);
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        let isLocked = false;
+        const svg = d3
+          .select("body")
+          .append("svg")
+          .attr("viewBox", [0, 0, width, height]);
+        const tooltip = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip");
+        const totalEdgeWidth = 2;
+
+        const simulation = d3
+          .forceSimulation(nodes)
+          .force(
+            "link",
+            d3
+              .forceLink(links)
+              .id((d) => d.id)
+              .distance(150)
+              .strength(1.9),
+          )
+          .force("charge", d3.forceManyBody().strength(-2))
+          .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const linkGroups = svg
+          .append("g")
+          .selectAll("g")
+          .data(links)
+          .join("g")
+          .attr("class", (d) => `link-group move-${d.moveType}-piece`)
+          .on("mouseover", function (event, d) {
+            const group = d3.select(this);
+            group.selectAll("line.strand").style("stroke-opacity", 1.0);
+            if (d.pieces) {
+              group
+                .append("text")
+                .attr("class", "link-label")
+                .attr("x", (d.source.x + d.target.x) / 2)
+                .attr("y", (d.source.y + d.target.y) / 2)
+                .text(d.pieces.split(",").join(""));
+            }
+            tooltip
+              .transition()
+              .duration(200)
+              .style("opacity", 0.9)
+              .html(`Move: ${d.pieces || "N/A"}`)
+              .style("left", event.pageX + 5 + "px")
+              .style("top", event.pageY - 28 + "px");
+          })
+          .on("mouseout", function () {
+            const group = d3.select(this);
+            group.selectAll("line.strand").style("stroke-opacity", 0.5);
+            group.select("text.link-label").remove();
+            tooltip.transition().duration(500).style("opacity", 0);
+          });
+
+        linkGroups.each(function (d) {
+          const group = d3.select(this);
+          const strands = d.pieces ? d.pieces.split(",") : [];
+          const strandWidth =
+            strands.length > 0
+              ? Math.max(0.5, totalEdgeWidth / strands.length)
+              : totalEdgeWidth;
+          group
+            .append("line")
+            .attr("class", "hit-area")
+            .style("stroke", "transparent")
+            .style("stroke-width", 10);
+
+          if (strands.length > 0) {
+            strands.forEach((piece) => {
+              group
+                .append("line")
+                .attr("class", "strand")
                 .classed("three-piece", d.moveType === 3)
-                .style("stroke", pieceColors.get(piece.trim()) || '#93a1a1')
+                .style("stroke", pieceColors.get(piece.trim()) || "#93a1a1")
                 .style("stroke-width", strandWidth.toFixed(2));
             });
-        } else {
-             group.append("line").attr("class", "strand")
-                .style("stroke", '#93a1a1')
-                .style("stroke-width", strandWidth.toFixed(2));
-        }
-      });
-
-      const node = svg.append("g").selectAll("g").data(nodes).join("g").attr("class", "node")
-        .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
-      node.append("circle").attr("r", 8);
-      node.append("text").text(d => d.id).attr("dx", 12).attr("dy", ".35em");
-      node.append("title").text(d => d.label);
-
-      simulation.on("tick", () => {
-        linkGroups.each(function(d) {
-          const group = d3.select(this);
-          const { source, target } = d;
-          group.select("line.hit-area").attr("x1", source.x).attr("y1", source.y).attr("x2", target.x).attr("y2", target.y);
-          const dx = target.x - source.x, dy = target.y - source.y;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          if (length === 0) return;
-          const nx = -dy / length, ny = dx / length;
-          const numStrands = d.pieces ? d.pieces.split(',').length : 1;
-          const strandWidth = Math.max(0.5, totalEdgeWidth / numStrands);
-          
-          group.selectAll("line.strand").each(function(_, i) {
-            const offset = (numStrands > 1) ? (i - (numStrands - 1) / 2) * strandWidth : 0;
-            d3.select(this)
-              .attr("x1", source.x + offset * nx).attr("y1", source.y + offset * ny)
-              .attr("x2", target.x + offset * nx).attr("y2", target.y + offset * ny);
-          });
+          } else {
+            group
+              .append("line")
+              .attr("class", "strand")
+              .style("stroke", "#93a1a1")
+              .style("stroke-width", strandWidth.toFixed(2));
+          }
         });
-        node.attr("transform", d => `translate(${d.x},${d.y})`);
-      });
 
-      function dragstarted(event, d) {
-        if (!event.active) {
+        const node = svg
+          .append("g")
+          .selectAll("g")
+          .data(nodes)
+          .join("g")
+          .attr("class", "node")
+          .call(
+            d3
+              .drag()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended),
+          );
+        node.append("circle").attr("r", 8);
+        node
+          .append("text")
+          .text((d) => d.id)
+          .attr("dx", 12)
+          .attr("dy", ".35em");
+        node.append("title").text((d) => d.label);
+
+        simulation.on("tick", () => {
+          linkGroups.each(function (d) {
+            const group = d3.select(this);
+            const { source, target } = d;
+            group
+              .select("line.hit-area")
+              .attr("x1", source.x)
+              .attr("y1", source.y)
+              .attr("x2", target.x)
+              .attr("y2", target.y);
+            const dx = target.x - source.x,
+              dy = target.y - source.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            if (length === 0) return;
+            const nx = -dy / length,
+              ny = dx / length;
+            const numStrands = d.pieces ? d.pieces.split(",").length : 1;
+            const strandWidth = Math.max(0.5, totalEdgeWidth / numStrands);
+
+            group.selectAll("line.strand").each(function (_, i) {
+              const offset =
+                numStrands > 1 ? (i - (numStrands - 1) / 2) * strandWidth : 0;
+              d3.select(this)
+                .attr("x1", source.x + offset * nx)
+                .attr("y1", source.y + offset * ny)
+                .attr("x2", target.x + offset * nx)
+                .attr("y2", target.y + offset * ny);
+            });
+          });
+          node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+        });
+
+        function dragstarted(event, d) {
+          if (!event.active) {
             simulation.alphaTarget(isLocked ? 0 : 0.3).restart();
+          }
+          d.fx = d.x;
+          d.fy = d.y;
         }
-        d.fx = d.x; d.fy = d.y;
-      }
-      function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
-      function dragended(event, d) {
-        if (!isLocked) {
-          if (!event.active) { simulation.alphaTarget(0); }
-          d.fx = null; d.fy = null;
+        function dragged(event, d) {
+          d.fx = event.x;
+          d.fy = event.y;
         }
-      }
-      
-      const lockBtn = document.getElementById('lock-btn');
-      const downloadBtn = document.getElementById('download-btn');
-      
-      lockBtn.addEventListener('click', () => {
-        isLocked = true;
-        simulation.stop();
-        lockBtn.textContent = 'Positions Locked ✨';
-        lockBtn.disabled = true;
-        downloadBtn.disabled = false;
-        node.selectAll("circle").attr("stroke", "#2aa198");
-      });
-      
-      downloadBtn.addEventListener('click', () => {
-        saveSvg(svg.node(), 'knuth-metagraph.svg');
-      });
-    }
+        function dragended(event, d) {
+          if (!isLocked) {
+            if (!event.active) {
+              simulation.alphaTarget(0);
+            }
+            d.fx = null;
+            d.fy = null;
+          }
+        }
 
-    document.getElementById('file-input').addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const knuthData = parseKnuthFormat(e.target.result);
-        const d3Data = transformToD3(knuthData);
-        renderD3Graph(d3Data);
-      };
-      reader.readAsText(file);
-    });
-  </script>
-</body>
+        const lockBtn = document.getElementById("lock-btn");
+        const downloadBtn = document.getElementById("download-btn");
+
+        lockBtn.addEventListener("click", () => {
+          isLocked = true;
+          simulation.stop();
+          lockBtn.textContent = "Positions Locked ✨";
+          lockBtn.disabled = true;
+          downloadBtn.disabled = false;
+          node.selectAll("circle").attr("stroke", "#2aa198");
+        });
+
+        downloadBtn.addEventListener("click", () => {
+          saveSvg(svg.node(), "knuth-metagraph.svg");
+        });
+      }
+
+      // Function to fetch and render the graph
+      async function loadAndRenderGraph() {
+        try {
+          const response = await fetch("./somap-3.gb");
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const textContent = await response.text();
+          const knuthData = parseKnuthFormat(textContent);
+          const d3Data = transformToD3(knuthData);
+          renderD3Graph(d3Data);
+        } catch (error) {
+          console.error("Could not load the graph file:", error);
+          document.querySelector(".header p").textContent =
+            "Failed to load somap-3.gb. Please check console for details.";
+        }
+      }
+
+      // Load the graph when the page loads
+      document.addEventListener("DOMContentLoaded", loadAndRenderGraph);
+    </script>
+  </body>
 </html>

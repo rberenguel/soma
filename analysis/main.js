@@ -58,7 +58,9 @@ let graphClasses = null;
 // --- BUTTONS AND CONTAINERS ---
 const computeClassesBtn = document.getElementById("compute-classes-btn");
 const computeMetaBtn = document.getElementById("compute-meta-btn");
-const computeSolutionGraphBtn = document.getElementById("compute-solution-graph-btn"); // Add this
+const computeSolutionGraphBtn = document.getElementById(
+  "compute-solution-graph-btn",
+); // Add this
 const resultsContainer = document.getElementById("results-container");
 const metaGraphContainer = document.getElementById("meta-graph-container");
 
@@ -141,14 +143,14 @@ function computeAndRenderClasses() {
   setTimeout(() => {
     // Sort solutions to get a canonical order for IDs and consistent processing
     const sortedSolutions = [...allSolutions].sort((a, b) =>
-      a.signature.localeCompare(b.signature)
+      a.signature.localeCompare(b.signature),
     );
 
     solutionGraphs = new Map();
     sortedSolutions.forEach((solutionObject) => {
       if (!solutionObject || typeof solutionObject.signature !== "string") {
         console.error(
-          `Problem: The solution object or its signature is invalid.`, 
+          `Problem: The solution object or its signature is invalid.`,
           solutionObject,
         );
         return;
@@ -417,7 +419,7 @@ function computeAndRenderMetaGraph() {
     summaryP.textContent = `Found ${connectedComponents.length} connected component(s) and ${singletonClasses.length} isolated classes (singletons). An edge represents a 2-piece move.`;
     console.log(garbuixSyntax);
     console.log(mermaidMetaSyntax);
-    metaGraphViz.textContent = mermaidMetaSyntax;
+    /*metaGraphViz.textContent = mermaidMetaSyntax;
     metaGraphViz.classList.add("mermaid");
     metaGraphContainer.style.display = "block";
 
@@ -432,7 +434,7 @@ function computeAndRenderMetaGraph() {
         });
       }
     });
-
+*/
     computeMetaBtn.textContent = "Computation Complete";
     window.somaAnalysis = {
       allSolutions,
@@ -518,8 +520,14 @@ function computeAndRenderSolutionGraph() {
                   pieces: edgeLabel,
                   moveType: movedPieces.size,
                 });
-                adjacency.set(sol1.signature, adjacency.get(sol1.signature) + 1);
-                adjacency.set(sol2.signature, adjacency.get(sol2.signature) + 1);
+                adjacency.set(
+                  sol1.signature,
+                  adjacency.get(sol1.signature) + 1,
+                );
+                adjacency.set(
+                  sol2.signature,
+                  adjacency.get(sol2.signature) + 1,
+                );
                 transformationFound = true;
                 break;
               }
@@ -585,7 +593,10 @@ function computeAndRenderSolutionGraph() {
 }
 
 // --- EVENT LISTENERS ---
-computeSolutionGraphBtn.addEventListener("click", computeAndRenderSolutionGraph);
+computeSolutionGraphBtn.addEventListener(
+  "click",
+  computeAndRenderSolutionGraph,
+);
 computeClassesBtn.addEventListener("click", computeAndRenderClasses);
 computeMetaBtn.addEventListener("click", computeAndRenderMetaGraph);
 

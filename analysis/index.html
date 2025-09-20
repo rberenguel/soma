@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="../media/favicon.ico" type="image/x-icon" />
     <title>Soma Cube Solution Analysis</title>
     <script src="./libs/mermaid.js"></script>
     <script src="./libs/svgpanzoom.js"></script>
@@ -158,27 +159,71 @@
         padding: 1rem;
         border-radius: 8px;
       }
+      #container a {
+        color: #cc0;
+      }
+      h4.subtitle {
+        text-align: center;
+        color: #586e75; /* Solarized Base00 */
+        font-size: 0.9em;
+        margin-top: -1rem;
+        margin-bottom: 2rem;
+        border-bottom: none;
+        padding-bottom: 0;
+      }
     </style>
   </head>
   <body>
     <div id="container">
       <h1>Soma Cube Solution Analysis</h1>
+      <h4 class="subtitle">Ruben Berenguel, 2025</h4>
       <p>
-        The solver finds all 240 unique solutions, which are then grouped into
-        unique structural classes based on their piece-adjacency graphs.
+        The same solver used in the simulator to assign a unique identifier to
+        solutions, finds all 240 unique solutions, which are then grouped into
+        unique structural classes based on their piece-adjacency graphs. You can
+        find more details in the summary box below. You need to run this first,
+        since it generates data structures needed for the other two.
+      </p>
+      <hr />
+      <p>
+        The meta-graph is a state graph of 2 or 3 piece moves that can transform
+        <em>some</em> solution in the class to another solution in another
+        class. This graph is fully connected, and will open in its own tab,
+        since it is pretty large. The node SVG images are those generated in the
+        previous step, and downloaded.
+      </p>
+      <hr />
+      <p>
+        The full solution graph is also known as the <strong>SOMAP</strong> (see
+        <a href="https://www-cs-faculty.stanford.edu/~knuth/somap-list.txt"
+          >Knuth</a
+        >). This will generate the full connection graph of canonical solutions,
+        and how to move across them with changes of 2 or 3 piece moves. It will
+        open in its own tab.
+      </p>
+
+      <p>
+        It will show <em>no</em> solutions, but just placeholders. If you find
+        solutions using my
+        <a href="https://www.mostlymaths.net/soma">Soma cube simulator</a>, you
+        can load them and they will show in the graph. Then you can use the
+        graph to guide you in finding the missing solutions.
       </p>
       <p>
-        The meta-graph is a state graph of 2/3 piece moves that can transform <em>some</em> solution in the class to another solution in another class.
-        This graph is fully connected.
+        You can optionally disable the 3-piece option to see only 2 piece
+        changes. The 2/3 version (sometimes referenced as SOMAP-3) has two
+        connected components: one with 239 solutions, and one with one solution.
+        The 2 version (SOMAP-2) is disconnected, and has several singletons. If
+        you are curious to see Knuths's SOMAP-3 graph, I added a renderer for it
+        <a href="./knuth.html">here</a>.
       </p>
-      <p>
-        The full solution graph is also known as the <strong>SOMAP</strong> (see <a href="https://www-cs-faculty.stanford.edu/~knuth/somap-list.txt">Knuth</a>).
-        This will generate 
-      </p>
+      <hr />
       <div id="controls">
         <button id="compute-classes-btn">Compute Graph Classes</button>
         <button id="compute-meta-btn" disabled>Compute Meta-Graph</button>
-        <button id="compute-solution-graph-btn" disabled>Compute Full Solution Graph</button>
+        <button id="compute-solution-graph-btn" disabled>
+          Compute Full Solution Graph
+        </button>
       </div>
       <details>
         <summary>How are graph classes calculated?</summary>

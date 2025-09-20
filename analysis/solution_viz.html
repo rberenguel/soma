@@ -2,23 +2,95 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Soma Cube | Full Solution Graph</title>
+    <title>Soma Cube | Full Solution Graph (SOMAP)</title>
+    <link rel="icon" href="../media/favicon.ico" type="image/x-icon" />
     <script src="./libs/d3v6.js"></script>
+    <script src="./libs/svgpanzoom.js"></script>
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #002b36; font-family: "monoidregular", monospace; }
-      svg { width: 100%; height: 100%; }
-      .node { cursor: pointer; }
-      .node circle { stroke: #93a1a1; stroke-width: 1.5px; }
-      .node text { fill: #93a1a1; font-size: 10px; pointer-events: none; }
-      .strand { stroke-opacity: 0.5; pointer-events: none; }
-      .strand.three-piece { stroke-dasharray: 4, 4; }
-      .link-group { cursor: help; }
-      .link-label { font-size: 12px; font-weight: bold; fill: #fdf6e3; stroke: #002b36; stroke-width: 3px; paint-order: stroke; text-anchor: middle; alignment-baseline: middle; pointer-events: none; opacity: 1; }
-      .tooltip { position: absolute; text-align: center; width: auto; padding: 8px; font: 12px sans-serif; background: #073642; border: 1px solid #93a1a1; border-radius: 8px; pointer-events: none; color: #93a1a1; opacity: 0; }
-      .controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 10px; align-items: center; z-index: 10; }
-      .controls button { font-family: "monoidregular", monospace; background-color: #073642; color: #93a1a1; border: 1px solid #586e75; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
-      .controls button:disabled { cursor: not-allowed; opacity: 0.5; }
-      
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #002b36;
+        font-family: "monoidregular", monospace;
+      }
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+      .node {
+        cursor: pointer;
+      }
+      .node circle {
+        stroke: #93a1a1;
+        stroke-width: 1.5px;
+      }
+      .node text {
+        fill: #93a1a1;
+        font-size: 10px;
+        pointer-events: none;
+      }
+      .strand {
+        stroke-opacity: 0.5;
+        pointer-events: none;
+      }
+      .strand.three-piece {
+        stroke-dasharray: 4, 4;
+      }
+      .link-group {
+        cursor: help;
+      }
+      .link-label {
+        font-size: 12px;
+        font-weight: bold;
+        fill: #fdf6e3;
+        stroke: #002b36;
+        stroke-width: 3px;
+        paint-order: stroke;
+        text-anchor: middle;
+        alignment-baseline: middle;
+        pointer-events: none;
+        opacity: 1;
+      }
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        width: auto;
+        padding: 8px;
+        font: 12px sans-serif;
+        background: #073642;
+        border: 1px solid #93a1a1;
+        border-radius: 8px;
+        pointer-events: none;
+        color: #93a1a1;
+        opacity: 0;
+      }
+      .controls {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 10;
+      }
+      .controls button {
+        font-family: "monoidregular", monospace;
+        background-color: #073642;
+        color: #93a1a1;
+        border: 1px solid #586e75;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .controls button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
       #viewer-container {
         position: absolute;
         top: 15px;
@@ -35,8 +107,17 @@
         align-items: center;
         z-index: 5;
       }
-      #viewer-container h2 { color: #93a1a1; margin-top: 0; margin-bottom: 10px; text-align: center; }
-      #viewer-image { max-width: 100%; border: 2px solid #586e75; border-radius: 8px; }
+      #viewer-container h2 {
+        color: #93a1a1;
+        margin-top: 0;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      #viewer-image {
+        max-width: 100%;
+        border: 2px solid #586e75;
+        border-radius: 8px;
+      }
     </style>
   </head>
   <body>
@@ -45,12 +126,18 @@
       <button id="download-btn" disabled>Download SVG</button>
       <button id="load-local-trigger-btn">Load Local Solutions...</button>
       <button id="toggle-3-piece-btn">Toggle 3-Piece Moves</button>
-      <input type="file" id="load-local-input" multiple accept="image/png" style="display: none;">
+      <input
+        type="file"
+        id="load-local-input"
+        multiple
+        accept="image/png"
+        style="display: none"
+      />
     </div>
 
     <div id="viewer-container">
       <h2 id="viewer-title">Solution #</h2>
-      <img id="viewer-image" src="" alt="Selected solution"/>
+      <img id="viewer-image" src="" alt="Selected solution" />
     </div>
 
     <script type="module" src="solution_viz.js"></script>
