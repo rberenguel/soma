@@ -17,6 +17,28 @@
         color: #839496; /* Solarized Base01 */
         line-height: 1.6;
       }
+      /* In styles.css */
+      .chiral-notice {
+        background-color: #103b46; /* A light, solarized color */
+        border-left: 5px solid #b58900; /* Solarized yellow */
+        padding: 15px 20px;
+        margin: 20px;
+        border-radius: 4px;
+        font-family: "Inter", sans-serif;
+        color: #839496; /* A darker, readable color */
+        font-size: 0.9em;
+      }
+      .chiral-notice .piece-f {
+        color: #d33682; /* Piece F Color (Magenta) */
+        font-weight: bold;
+      }
+
+      .chiral-notice .piece-g {
+        color: #cb4b16; /* Piece G Color (Orange) */
+        font-weight: bold;
+      }
+      .chiral-notice strong {
+      }
       #container {
         max-width: 960px;
         margin: 2rem auto;
@@ -183,7 +205,27 @@
         The process is broken down into three main steps, each with its own
         interactive visualization.
       </p>
-
+      <div class="chiral-notice">
+        <p>
+          <strong
+            >A Note on Chiral Pieces (<span class="piece-f">F magenta</span> &
+            <span class="piece-g">G orange</span>):</strong
+          >
+        </p>
+        <p>
+          Please be aware that sometimes the export from the simulation seems to
+          swap <span class="piece-f">F</span> and
+          <span class="piece-g">G</span>. While the solution graph is
+          technically correct, their labeling or coloring might be inconsistent
+          in some cases. This should <em>only</em> make a bit more fun exploring
+          the full solution map though!
+        </p>
+        <p>
+          For the class graph, all cases I have randomly checked are consistent:
+          the exported solution has the colors swapped, and the class graph is
+          correct. But for now, take the class graph with a grain of salt.
+        </p>
+      </div>
       <hr />
 
       <h2>How It Works</h2>
@@ -215,7 +257,11 @@
         >. Initially, the graph displays placeholders for all 240 canonical
         solutions.
       </p>
-
+      <p>
+        You can use <em>Find Tour</em> to show a Hamiltonian path through the
+        whole main connected component. This lets you travel the whole graph "in
+        one go".
+      </p>
       <p>
         As you find solutions using my
         <a href="https://www.mostlymaths.net/soma">Soma cube simulator</a>, you
@@ -226,7 +272,6 @@
         3-piece moves. If you're interested, you can see a rendering of Knuth's
         original SOMAP-3 graph <a href="./knuth.html">here</a>.
       </p>
-
       <hr />
       <div id="controls">
         <button id="compute-classes-btn">Compute Graph Classes</button>
