@@ -44,6 +44,8 @@ const solverHelpers = {
   ...gridHelpers,
   getCanonicalSignature: (grid) =>
     gridHelpers.getCanonicalSignature(grid, pieces, chiralSwapMap),
+  getCanonicalSignatureAndGrid: (grid) =>
+    gridHelpers.getCanonicalSignatureAndGrid(grid, pieces, chiralSwapMap),
   flattenGrid: (grid) => gridHelpers.flattenGrid(grid, pieces),
 };
 
@@ -490,8 +492,16 @@ function computeAndRenderSolutionGraph() {
           (g) => rotateGrid(rotateGrid(rotateGrid(g, "z"), "z"), "z"),
         ];
 
-        for (const initialGrid of gridsToTest) {
+        for (const initialGridData of [
+          { grid: sol2.grid, reflected: false },
+          {
+            grid: reflectAndSwapGrid(sol2.grid, chiralSwapMap),
+            reflected: true,
+          },
+        ]) {
           if (transformationFound) break;
+          const { grid: initialGrid, reflected: isReflected } = initialGridData;
+
           for (const orient of faceOrienters) {
             if (transformationFound) break;
             let currentGrid = orient(initialGrid);
@@ -513,7 +523,19 @@ function computeAndRenderSolutionGraph() {
               }
 
               if (movedPieces.size === 2 || movedPieces.size === 3) {
-                const edgeLabel = Array.from(movedPieces).sort().join(",");
+                let edgeLabel;
+                if (isReflected) {
+                  const correctedPieces = new Set();
+                  movedPieces.forEach((name) => {
+                    if (name === "F") correctedPieces.add("G");
+                    else if (name === "G") correctedPieces.add("F");
+                    else correctedPieces.add(name);
+                  });
+                  edgeLabel = Array.from(correctedPieces).sort().join(",");
+                } else {
+                  edgeLabel = Array.from(movedPieces).sort().join(",");
+                }
+
                 links.push({
                   source: sol1.signature,
                   target: sol2.signature,

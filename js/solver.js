@@ -7,6 +7,7 @@ export function initializeSolver(pieceDefs, pieces, helpers) {
     reflectGrid,
     flattenGrid,
     getCanonicalSignature,
+    getCanonicalSignatureAndGrid,
   } = helpers;
 
   function generateUniqueOrientations(shape) {
@@ -103,9 +104,9 @@ export function initializeSolver(pieceDefs, pieces, helpers) {
               tempGrid[x][y][z] = pieces[grid[x][y][z] - 1];
             }
           }
-      const signature = getCanonicalSignature(tempGrid);
-      if (!solutions.has(signature)) {
-        solutions.set(signature, tempGrid);
+      const result = getCanonicalSignatureAndGrid(tempGrid);
+      if (!solutions.has(result.signature)) {
+        solutions.set(result.signature, result.grid);
       }
       return;
     }
@@ -158,10 +159,12 @@ export function initializeSolver(pieceDefs, pieces, helpers) {
 
   solve(initialGrid, piecesToPlace, foundSolutions);
 
-  const allSols = Array.from(foundSolutions.entries()).map(([sig, grid]) => ({
-    signature: sig,
-    grid: grid,
-  }));
+  const allSols = Array.from(foundSolutions.entries())
+    .map(([sig, grid]) => ({
+      signature: sig,
+      grid: grid,
+    }))
+    .sort((a, b) => a.signature.localeCompare(b.signature));
   console.log(`Solver finished. Found ${allSols.length} unique solutions.`);
   console.log(allSols);
   return allSols;

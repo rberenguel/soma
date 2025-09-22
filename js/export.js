@@ -3,16 +3,16 @@ import { createNewGrid } from "./grid.js";
 
 async function exportCubeSolution(
   solutionGrid,
-  getCanonicalSignature,
+  getCanonicalSignatureAndGrid,
   allCanonicalSolutions,
 ) {
-  const grid3d = createNewGrid();
+  const currentGrid = createNewGrid();
   for (let x = -1; x <= 1; x++) {
     for (let y = 0; y <= 2; y++) {
       for (let z = -1; z <= 1; z++) {
         const key = `${x},${y},${z}`;
         if (solutionGrid.has(key)) {
-          grid3d[x + 1][y][z + 1] = solutionGrid.get(key);
+          currentGrid[x + 1][y][z + 1] = solutionGrid.get(key);
         }
       }
     }
@@ -23,9 +23,10 @@ async function exportCubeSolution(
   const padding = Math.round(cellSize / 5);
   const fontSize = Math.max(12, Math.round(cellSize * 0.32));
   const lineWidth = Math.max(1, Math.round(cellSize / 25));
-  const signature = getCanonicalSignature(grid3d);
+  const { signature, grid: canonicalGrid } =
+    getCanonicalSignatureAndGrid(currentGrid);
   const solutionIndex = allCanonicalSolutions.indexOf(signature);
-  const solutionNumber = solutionIndex + 1;
+  const solutionNumber = solutionIndex >= 0 ? solutionIndex + 1 : 0;
   try {
     await document.fonts.load(`${fontSize}px monoidregular`);
   } catch (e) {
@@ -64,7 +65,7 @@ async function exportCubeSolution(
   for (let x = 0; x < gridSize; x++) {
     for (let y = 0; y < gridSize; y++) {
       for (let z = 0; z < gridSize; z++) {
-        const piece = grid3d[x][y][z];
+        const piece = canonicalGrid[x][y][z];
         if (!piece) continue;
         const color =
           "#" + piece.children[0].children[0].material.color.getHexString();

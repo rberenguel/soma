@@ -188,8 +188,8 @@ export function flattenGrid(grid, pieces) {
   return s;
 }
 
-export function getCanonicalSignature(grid3d, pieces, chiralSwapMap) {
-  const signatures = new Set();
+export function getCanonicalSignatureAndGrid(grid3d, pieces, chiralSwapMap) {
+  const signaturesAndGrids = [];
 
   function reflectAndSwapGrid(g) {
     const newGrid = createNewGrid();
@@ -229,11 +229,20 @@ export function getCanonicalSignature(grid3d, pieces, chiralSwapMap) {
     faceOrienters.forEach((orient) => {
       let currentGrid = orient(initialGrid);
       for (let i = 0; i < 4; i++) {
-        signatures.add(flattenGrid(currentGrid, pieces));
+        signaturesAndGrids.push({
+          signature: flattenGrid(currentGrid, pieces),
+          grid: currentGrid,
+        });
         currentGrid = rotateGrid(currentGrid, "y");
       }
     });
   });
 
-  return Array.from(signatures).sort()[0];
+  return signaturesAndGrids.sort((a, b) =>
+    a.signature.localeCompare(b.signature),
+  )[0];
+}
+
+export function getCanonicalSignature(grid3d, pieces, chiralSwapMap) {
+  return getCanonicalSignatureAndGrid(grid3d, pieces, chiralSwapMap).signature;
 }

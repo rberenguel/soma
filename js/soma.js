@@ -11,6 +11,7 @@ import {
   reflectGrid,
   flattenGrid,
   getCanonicalSignature,
+  getCanonicalSignatureAndGrid,
 } from "./grid.js";
 import {
   generatePuzzleWireframe,
@@ -121,18 +122,22 @@ function setupGame() {
       flattenGrid: (grid) => flattenGrid(grid, pieces),
       getCanonicalSignature: (grid) =>
         getCanonicalSignature(grid, pieces, chiralSwapMap),
+      getCanonicalSignatureAndGrid: (grid) =>
+        getCanonicalSignatureAndGrid(grid, pieces, chiralSwapMap),
     };
-    const solutionsCacheKey = "somaSolutions_v1";
+    const solutionsCacheKey = "somaSolutions_v3";
     try {
       const cachedSolutions = localStorage.getItem(solutionsCacheKey);
       if (cachedSolutions) {
         allCanonicalSolutions = JSON.parse(cachedSolutions);
+        allCanonicalSolutions.sort((a, b) => a.localeCompare(b));
       } else {
-        allCanonicalSolutions = initializeSolver(
+        const solutionsFromSolver = initializeSolver(
           pieceDefs,
           pieces,
           solverHelpers,
         );
+        allCanonicalSolutions = solutionsFromSolver.map((s) => s.signature);
         localStorage.setItem(
           solutionsCacheKey,
           JSON.stringify(allCanonicalSolutions),
@@ -140,11 +145,12 @@ function setupGame() {
       }
     } catch (e) {
       console.error("Could not use localStorage. Re-computing solutions.", e);
-      allCanonicalSolutions = initializeSolver(
+      const solutionsFromSolver = initializeSolver(
         pieceDefs,
         pieces,
         solverHelpers,
       );
+      allCanonicalSolutions = solutionsFromSolver.map((s) => s.signature);
     }
   }
 
@@ -162,7 +168,7 @@ function setupGame() {
     exportSolution(
       gameMode,
       solutionGrid,
-      (grid) => getCanonicalSignature(grid, pieces, chiralSwapMap),
+      (grid) => getCanonicalSignatureAndGrid(grid, pieces, chiralSwapMap),
       allCanonicalSolutions,
       scene,
       renderer,
