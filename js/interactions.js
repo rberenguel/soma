@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { highlightEmissive } from "./config.js";
 import { MIN_ZOOM, MAX_ZOOM } from "./config.js";
+import { updateControlColors } from "./ui.js";
 
 let scene,
   camera,
@@ -62,6 +63,11 @@ function selectPiece(piece) {
   scene.add(ghostPiece);
 
   selectedPiece.visible = false;
+  //document.getElementById("nudge-pad").classList.remove("hidden");
+  const color =
+    selectedPiece.children[0].children[0].material.color.getHexString();
+  console.log(color);
+  updateControlColors(color);
 }
 
 function deselectPiece() {
@@ -77,6 +83,8 @@ function deselectPiece() {
   selectedPiece = null;
   updateGrid();
   checkWin();
+  //document.getElementById("nudge-pad").classList.add("hidden");
+  updateControlColors(null);
 }
 
 function getPointersDistance(pointers) {

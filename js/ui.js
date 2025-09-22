@@ -41,6 +41,28 @@ export function restartGame(pieces, updateGrid, checkWin) {
   checkWin();
 }
 
+export function updateControlColors(color) {
+  const nudgePad = document.getElementById("nudge-pad");
+  const trackball = document.getElementById("trackball");
+
+  if (color) {
+    const pieceColor = `#${color}`;
+    document.getElementById("nudge-up").style.backgroundColor = pieceColor;
+    document.getElementById("nudge-down").style.backgroundColor = pieceColor;
+    document.getElementById("nudge-right").style.backgroundColor = pieceColor;
+    document.getElementById("nudge-left").style.backgroundColor = pieceColor;
+    console.log(trackball);
+    if (trackball) {
+      setTimeout(() => {
+        trackball.style.borderColor = pieceColor;
+      }, 150);
+    }
+  } else {
+    nudgePad.style.color = ""; // Revert to CSS default
+    if (trackball) trackball.style.borderColor = ""; // Revert to CSS default
+  }
+}
+
 export async function initializeUI(exportSolution, restartGame, puzzles) {
   const infoPanel = document.getElementById("info");
   const blur = document.getElementById("blur");

@@ -285,6 +285,7 @@ canvas {
   height: 110px;
   background: radial-gradient(circle at 30% 30%, #839496, #073642 80%);
   border-radius: 50%;
+  border: 5px solid black;
   box-shadow:
     inset 0 0 10px rgba(0, 0, 0, 0.5),
     0 3px 5px rgba(0, 0, 0, 0.4);
@@ -311,7 +312,9 @@ canvas {
   top: calc(50% - 20px);
   left: calc(50% - 20px);
   pointer-events: none;
-  transition: transform 0.1s ease-out;
+  transition:
+    transform 0.1s ease-out,
+    border-color 0.3s ease;
 }
 #trackball:active {
   cursor: grabbing;
@@ -344,7 +347,7 @@ canvas {
 #nudge-pad button {
   background-color: #073642;
   border: 1px solid #586e75;
-  color: #93a1a1;
+  color: #000;
   border-radius: 8px;
   font-size: 18px;
   font-weight: bold;
@@ -352,6 +355,9 @@ canvas {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #nudge-pad button:hover {
