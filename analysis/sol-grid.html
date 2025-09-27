@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="../media/favicon.ico" type="image/x-icon" />
+    <title>Soma Cube Solution Grid</title>
+    <link href="../fonts/inter.css" rel="stylesheet" />
+    <link href="../fonts/monoid.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        font-family: "monoidregular";
+        background-color: #002b36;
+        color: #839496;
+        line-height: 1.6;
+      }
+      #container {
+        max-width: 95%;
+        margin: 2rem auto;
+        background: #001f27;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #073642;
+      }
+      h1 {
+        border-bottom: 1px solid #073642;
+        padding-bottom: 0.5rem;
+        color: #268bd2;
+      }
+      p {
+        color: #93a1a1;
+      }
+      #solution-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin-top: 2rem;
+      }
+      .grid-slot {
+        position: relative;
+        cursor: pointer;
+        border: 1px solid #073642;
+        border-radius: 4px;
+        overflow: hidden;
+        aspect-ratio: 1300 / 980;
+      }
+      .grid-slot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .grid-slot .solution-number {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background-color: rgba(0, 43, 54, 0.8);
+        color: #93a1a1;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+      }
+      #file-loader {
+        display: none;
+      }
+      /* Lightbox styles */
+      #lightbox-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 43, 54, 0.85);
+        display: none; /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      #lightbox-content {
+        position: relative;
+        padding: 20px;
+        background-color: #001f27;
+        border: 1px solid #586e75;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90%;
+      }
+      #lightbox-image {
+        max-width: 100%;
+        max-height: 85vh;
+        display: block;
+        border: 2px solid #586e75;
+        border-radius: 8px;
+      }
+      #lightbox-close {
+        position: absolute;
+        top: -15px;
+        right: -15px;
+        background: #dc322f;
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+        line-height: 26px;
+        text-align: center;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="lightbox-overlay">
+      <div id="lightbox-content">
+        <span id="lightbox-close">&times;</span>
+        <img id="lightbox-image" src="" alt="Enlarged solution" />
+      </div>
+    </div>
+
+    <div id="container">
+      <h1>Soma Solution Grid</h1>
+      <p>
+        This grid displays all 240 canonical solutions. Click on any placeholder
+        to load your collected solution images. Click a loaded solution to see
+        it larger.
+      </p>
+      <div id="solution-grid"></div>
+      <input type="file" id="file-loader" multiple accept="image/png" />
+    </div>
+    <script type="module" src="sol-grid.js"></script>
+  </body>
+</html>

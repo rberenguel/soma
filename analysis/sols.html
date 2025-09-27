@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="../media/favicon.ico" type="image/x-icon" />
+    <title>Soma Cube Solution Exporter</title>
+    <link href="../fonts/inter.css" rel="stylesheet" />
+    <link href="../fonts/monoid.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        font-family: "monoidregular";
+        background-color: #002b36;
+        color: #839496;
+        line-height: 1.6;
+      }
+      #container {
+        max-width: 960px;
+        margin: 2rem auto;
+        background: #001f27;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #073642;
+      }
+      h1,
+      h2 {
+        border-bottom: 1px solid #073642;
+        padding-bottom: 0.5rem;
+        color: #268bd2;
+      }
+      p,
+      li {
+        color: #93a1a1;
+      }
+      button {
+        background-color: #268bd2;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        font-family: "Inter", sans-serif;
+        font-size: 1em;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+      }
+      button:disabled {
+        background-color: #586e75;
+        cursor: not-allowed;
+      }
+      button:hover:not(:disabled) {
+        background-color: #2aa198;
+      }
+      #status {
+        margin-top: 1rem;
+        font-family: monospace;
+        color: #b58900;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Soma Cube Solution Exporter</h1>
+      <p>
+        Click the button below to generate and download all 240 canonical
+        solutions as a single ZIP file.
+      </p>
+      <p>
+        The process will run entirely in your browser. It may take a few moments
+        to compute the solutions and generate the images.
+      </p>
+      <button id="export-all-button">Export All 240 Solutions</button>
+      <p id="status"></p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../libs/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="../js/sols.js"></script>
+  </body>
+</html>
